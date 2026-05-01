@@ -17,22 +17,20 @@ export function NodeEditor({ node, onChange, onDelete }: NodeEditorProps) {
   if (!node) {
     return (
       <aside className="side-panel">
-        <h2>Selected Workflow Step</h2>
-        <p className="empty-state">
-          Select a workflow step to edit its role, notes, and prompt brief.
-        </p>
+        <h2>Selected Workflow Step（選択中Step）</h2>
+        <p className="empty-state">編集するWorkflow Stepを選択してください。</p>
       </aside>
     );
   }
 
   return (
     <aside className="side-panel">
-      <h2>Selected Workflow Step</h2>
+      <h2>Selected Workflow Step（選択中Step）</h2>
       <p className="empty-state">
-        Compact properties for the selected workflow step. Edit its Prompt Brief in the main panel.
+        選択中Stepの基本情報だけを編集します。Prompt Briefはメイン領域で編集します。
       </p>
       <label>
-        Name
+        Name（名前）
         <input
           value={node.name}
           onKeyDown={stopEditorKeyboardPropagation}
@@ -40,11 +38,11 @@ export function NodeEditor({ node, onChange, onDelete }: NodeEditorProps) {
         />
       </label>
       <label>
-        Type
+        Type（種別）
         <input value={node.type} readOnly onKeyDown={stopEditorKeyboardPropagation} />
       </label>
       <label>
-        Node Role
+        Node Role（このStepの役割）
         <textarea
           value={node.purpose}
           rows={4}
@@ -53,7 +51,7 @@ export function NodeEditor({ node, onChange, onDelete }: NodeEditorProps) {
         />
       </label>
       <label>
-        Notes
+        Notes（メモ）
         <textarea
           value={node.notes ?? ""}
           rows={4}
@@ -62,7 +60,7 @@ export function NodeEditor({ node, onChange, onDelete }: NodeEditorProps) {
         />
       </label>
       <button className="danger-button" type="button" onClick={() => onDelete(node.id)}>
-        Delete node
+        Nodeを削除
       </button>
     </aside>
   );

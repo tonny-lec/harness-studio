@@ -31,27 +31,24 @@ const draftFromBrief = (promptBrief: PromptBrief): Record<keyof DraftFields, str
 });
 
 const fieldLabels: Record<keyof DraftFields, string> = {
-  successCriteria: "Success Criteria",
-  availableContext: "Available Context",
-  constraints: "Constraints",
-  validation: "Validation",
-  output: "Output",
-  stopRules: "Stop Rules",
+  successCriteria: "Success Criteria（成功条件）",
+  availableContext: "Available Context（利用可能な前提情報）",
+  constraints: "Constraints（制約）",
+  validation: "Validation（検証）",
+  output: "Output（期待する出力）",
+  stopRules: "Stop Rules（停止・質問条件）",
 };
 
 const fieldPlaceholders: Record<keyof DraftFields, string> = {
   successCriteria:
-    "Example:\n- Existing edges can be deleted\n- Deleted edges stay deleted after refresh\n- npm run build passes",
+    "例:\n- 既存の edge を削除できる\n- 削除後にリロードしても edge が復活しない\n- npm run build が成功する",
   availableContext:
-    "Example:\nThe app uses React, TypeScript, Zustand, React Flow, and localStorage persistence.",
+    "例:\nこのアプリは React、TypeScript、Zustand、React Flow、localStorage を利用している。",
   constraints:
-    "Example:\n- Do not add backend APIs\n- Do not change routing\n- Preserve existing localStorage behavior",
-  validation:
-    "Example:\nnpm run build\nManual check: delete an edge, refresh, and confirm it does not return",
-  output:
-    "Example:\nReport files changed, behavior implemented, validation results, and remaining trade-offs.",
-  stopRules:
-    "Example:\nAsk only if missing information would materially change the implementation or create risk.",
+    "例:\n- backend API は追加しない\n- 既存の localStorage 永続化を壊さない\n- 大きなUI redesign はしない",
+  validation: "例:\nnpm run build\n手動確認: edge を削除してリロード後も復活しないことを確認する",
+  output: "例:\n変更ファイル、実装内容、検証結果、残っている制約やトレードオフを報告する。",
+  stopRules: "例:\n実装方針に影響する情報が不足している場合のみ質問する。",
 };
 
 export function PromptBriefEditor({
@@ -73,17 +70,17 @@ export function PromptBriefEditor({
   };
 
   return (
-    <section className="prompt-brief-panel" aria-label="Prompt brief">
+    <section className="prompt-brief-panel" aria-label="Prompt Brief（プロンプト概要）">
       <div className="panel-heading">
         <h2>{title}</h2>
       </div>
       {helperText && <p className="helper-text">{helperText}</p>}
       <label className="prompt-brief-goal">
-        Goal
+        Goal（目的）
         <textarea
           value={promptBrief.goal}
           rows={3}
-          placeholder="Example: Add edge deletion support to the React Flow canvas."
+          placeholder="例: React Flow の edge を削除できるようにする。"
           onKeyDown={stopKeyboardPropagation}
           onChange={(event) => onChange({ goal: event.target.value })}
         />

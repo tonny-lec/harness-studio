@@ -12,9 +12,9 @@ const stopKeyboardPropagation = (event: KeyboardEvent<HTMLInputElement | HTMLTex
 
 export function HarnessMetadataEditor({ harness, onChange }: HarnessMetadataEditorProps) {
   return (
-    <section className="metadata-panel" aria-label="Harness metadata">
+    <section className="metadata-panel" aria-label="Harness metadata（ハーネス基本情報）">
       <label>
-        Harness name
+        Harness name（ハーネス名）
         <input
           value={harness.name}
           onKeyDown={stopKeyboardPropagation}
@@ -22,7 +22,7 @@ export function HarnessMetadataEditor({ harness, onChange }: HarnessMetadataEdit
         />
       </label>
       <label>
-        Description
+        Description（説明）
         <textarea
           value={harness.description}
           rows={2}

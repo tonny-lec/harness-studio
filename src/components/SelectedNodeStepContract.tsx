@@ -26,25 +26,23 @@ const draftFromContract = (stepContract: StepContract): Record<keyof StepContrac
 });
 
 const fieldLabels: Record<keyof StepContract, string> = {
-  requiredInputs: "Required Inputs",
-  producedArtifacts: "Produced Artifacts",
-  allowedActions: "Allowed Actions",
-  qualityGates: "Quality Gates",
-  handoffNotes: "Handoff Notes",
-  failureModes: "Failure Modes",
+  requiredInputs: "Required Inputs（必要な入力）",
+  producedArtifacts: "Produced Artifacts（生成する成果物）",
+  allowedActions: "Allowed Actions（許可する操作）",
+  qualityGates: "Quality Gates（品質ゲート）",
+  handoffNotes: "Handoff Notes（引き継ぎメモ）",
+  failureModes: "Failure Modes（失敗・停止条件）",
 };
 
 const fieldPlaceholders: Record<keyof StepContract, string> = {
-  requiredInputs: "Example:\n- User task\n- Relevant source files\n- Context Pack notes",
-  producedArtifacts: "Example:\n- Investigation summary\n- Code changes\n- Review findings",
+  requiredInputs: "例:\n- ユーザーの依頼内容\n- 対象リポジトリの構造\n- 関連するIssueやチケット",
+  producedArtifacts: "例:\n- 調査レポート\n- 影響ファイル一覧\n- 未確認事項",
   allowedActions:
-    "Example:\n- Inspect repository files\n- Edit focused frontend code\n- Run npm run build",
+    "例:\n- ファイルを読む\n- リポジトリ内を検索する\n- 破壊的でないコマンドを実行する",
   qualityGates:
-    "Example:\n- Build passes\n- Existing behavior is preserved\n- No backend APIs added",
-  handoffNotes:
-    "Example:\n- Pass changed files and validation results to review\n- Include unresolved risks",
-  failureModes:
-    "Example:\n- Missing repository context\n- Validation command unavailable\n- Ambiguous product decision",
+    "例:\n- このStepではコード変更をしない\n- 事実と推測を分ける\n- リスクと未確認事項を明示する",
+  handoffNotes: "例:\n調査結果、影響範囲、リスクをImplementation Stepへ渡す。",
+  failureModes: "例:\n- リポジトリを確認できない場合は停止する\n- タスク範囲が曖昧な場合は質問する",
 };
 
 export function SelectedNodeStepContract({ node, onChange }: SelectedNodeStepContractProps) {
@@ -58,11 +56,14 @@ export function SelectedNodeStepContract({ node, onChange }: SelectedNodeStepCon
 
   if (!node || !drafts) {
     return (
-      <section className="step-contract-panel" aria-label="Selected node step contract">
+      <section
+        className="step-contract-panel"
+        aria-label="Selected node step contract（選択中NodeのStep Contract）"
+      >
         <div className="panel-heading">
-          <h2>Selected Node Step Contract</h2>
+          <h2>Selected Node Step Contract（選択中NodeのStep Contract）</h2>
         </div>
-        <p className="helper-text">Select a workflow step to edit its Step Contract.</p>
+        <p className="helper-text">Step Contract を編集するWorkflow Stepを選択してください。</p>
       </section>
     );
   }
@@ -73,12 +74,15 @@ export function SelectedNodeStepContract({ node, onChange }: SelectedNodeStepCon
   };
 
   return (
-    <section className="step-contract-panel" aria-label="Selected node step contract">
+    <section
+      className="step-contract-panel"
+      aria-label="Selected node step contract（選択中NodeのStep Contract）"
+    >
       <div className="panel-heading">
-        <h2>Selected Node Step Contract: {node.name}</h2>
+        <h2>Selected Node Step Contract（選択中NodeのStep Contract）: {node.name}</h2>
       </div>
       <p className="helper-text">
-        Defines what this workflow step requires, produces, validates, allows, and hands off.
+        このWorkflow Stepが何を受け取り、何を生成し、何を満たして次へ渡すかを定義します。
       </p>
       <div className="step-contract-grid">
         {(Object.keys(fieldLabels) as Array<keyof StepContract>).map((field) => (

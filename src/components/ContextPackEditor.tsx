@@ -29,30 +29,29 @@ const draftFromPack = (contextPack: ContextPack): Record<keyof ContextPack, stri
 });
 
 const fieldLabels: Record<keyof ContextPack, string> = {
-  projectFacts: "Project Facts",
-  domainNotes: "Domain Notes",
-  sourceMap: "Source Map",
-  conventions: "Conventions",
-  reusableConstraints: "Reusable Constraints",
-  validationCommands: "Validation Commands",
-  knownRisks: "Known Risks",
+  projectFacts: "Project Facts（プロジェクトの前提）",
+  domainNotes: "Domain Notes（ドメイン知識）",
+  sourceMap: "Source Map（ソースマップ）",
+  conventions: "Conventions（開発ルール・慣習）",
+  reusableConstraints: "Reusable Constraints（再利用する制約）",
+  validationCommands: "Validation Commands（検証コマンド）",
+  knownRisks: "Known Risks（既知のリスク）",
 };
 
 const fieldPlaceholders: Record<keyof ContextPack, string> = {
   projectFacts:
-    "Example:\n- React + TypeScript + Vite frontend\n- Zustand stores harness state\n- localStorage persists drafts",
+    "例:\n- React + TypeScript + Vite のフロントエンドアプリ\n- Zustand で harness state を管理する\n- localStorage で下書きを永続化する",
   domainNotes:
-    "Example:\n- A harness represents a reusable AI coding-agent workflow\n- Each workflow step has its own Prompt Brief",
+    "例:\n- Harness はAIコーディングエージェント向けの作業フローを表す\n- 1つのWorkflow Stepは1つのPromptに対応する",
   sourceMap:
-    "Example:\n- src/store/harnessStore.ts: harness state and persistence\n- src/utils/exportMarkdown.ts: export generation\n- src/components/HarnessCanvas.tsx: React Flow canvas",
+    "例:\n- src/store/harnessStore.ts: harness state と永続化\n- src/utils/exportMarkdown.ts: export生成\n- src/components/HarnessCanvas.tsx: React Flow canvas",
   conventions:
-    "Example:\n- Keep MVP features frontend-only\n- Prefer simple component boundaries\n- Avoid broad UI redesigns unless requested",
+    "例:\n- MVPではfrontend-onlyを維持する\n- component boundaryをシンプルに保つ\n- 指示がない限り大きなUI redesignは避ける",
   reusableConstraints:
-    "Example:\n- Do not add backend APIs unless explicitly requested\n- Preserve localStorage persistence\n- Do not reintroduce duplicated prompt fields",
-  validationCommands:
-    "Example:\nnpm run build\nManual check: refresh after editing and confirm data persists",
+    "例:\n- 明示されない限りbackend APIは追加しない\n- localStorage persistenceを壊さない\n- Prompt BriefとContext Packを混同しない",
+  validationCommands: "例:\nnpm run format:check\nnpm run build",
   knownRisks:
-    "Example:\n- Old persisted data may miss new fields\n- React Flow controlled state needs onNodesChange/onEdgesChange",
+    "例:\n- 古いlocalStorageデータには新しいfieldが存在しない可能性がある\n- React Flowのcontrolled stateではonNodesChange/onEdgesChangeが必要",
 };
 
 export function ContextPackEditor({ harnessId, contextPack, onChange }: ContextPackEditorProps) {
@@ -69,7 +68,7 @@ export function ContextPackEditor({ harnessId, contextPack, onChange }: ContextP
   };
 
   return (
-    <section className="context-pack-panel" aria-label="Context pack">
+    <section className="context-pack-panel" aria-label="Context Pack（共有前提知識）">
       <button
         className="section-toggle"
         type="button"
@@ -81,11 +80,11 @@ export function ContextPackEditor({ harnessId, contextPack, onChange }: ContextP
         ) : (
           <ChevronRight size={18} aria-hidden="true" />
         )}
-        <span>Context Pack</span>
+        <span>Context Pack（共有前提知識）</span>
       </button>
       <p className="helper-text">
-        Reusable project and domain knowledge. Keep task-specific instructions in workflow step
-        Prompt Briefs.
+        ハーネス全体で共有するプロジェクト・ドメイン知識です。タスク固有の依頼内容は各NodeのPrompt
+        Briefに書きます。
       </p>
       {isOpen && (
         <div className="context-pack-grid">

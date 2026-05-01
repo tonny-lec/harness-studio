@@ -14,21 +14,21 @@ export function HarnessList({ harnesses, onCreate, onOpen, onReset }: HarnessLis
       <header className="list-header">
         <div>
           <h1>Harness Studio</h1>
-          <p>Design personal AI coding-agent harnesses as editable flows.</p>
+          <p>AIコーディングエージェント向けの作業フローを設計するローカルGUIです。</p>
         </div>
         <div className="list-actions">
           <button className="ghost-button" type="button" onClick={onReset}>
             <RotateCcw size={18} aria-hidden="true" />
-            Reset samples
+            サンプルに戻す
           </button>
           <button className="primary-button" type="button" onClick={onCreate}>
             <Plus size={18} aria-hidden="true" />
-            New harness
+            新規Harness
           </button>
         </div>
       </header>
 
-      <section className="harness-grid" aria-label="Sample harnesses">
+      <section className="harness-grid" aria-label="Harness一覧">
         {harnesses.map((harness) => (
           <button
             className="harness-card"

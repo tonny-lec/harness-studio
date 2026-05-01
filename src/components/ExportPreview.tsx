@@ -32,10 +32,10 @@ export function ExportPreview({ harness, selectedNode }: ExportPreviewProps) {
   return (
     <section className="export-panel">
       <div className="panel-title-row">
-        <h2>Export Preview</h2>
+        <h2>Export Preview（出力プレビュー）</h2>
         <div className="export-actions">
           <label>
-            Format
+            Format（形式）
             <select
               value={format}
               onChange={(event) => {
@@ -52,13 +52,13 @@ export function ExportPreview({ harness, selectedNode }: ExportPreviewProps) {
           </label>
           <button className="ghost-button compact-button" type="button" onClick={handleCopy}>
             <Clipboard size={16} aria-hidden="true" />
-            Copy
+            コピー
           </button>
           {copyStatus !== "idle" && (
             <span
               className={copyStatus === "copied" ? "copy-status" : "copy-status copy-status-error"}
             >
-              {copyStatus === "copied" ? "Copied" : "Copy failed"}
+              {copyStatus === "copied" ? "コピーしました" : "コピーに失敗しました"}
             </span>
           )}
         </div>

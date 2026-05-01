@@ -9,11 +9,14 @@ type SelectedNodePromptBriefProps = {
 export function SelectedNodePromptBrief({ node, onChange }: SelectedNodePromptBriefProps) {
   if (!node) {
     return (
-      <section className="prompt-brief-panel" aria-label="Selected node prompt brief">
+      <section
+        className="prompt-brief-panel"
+        aria-label="Selected node prompt brief（選択中NodeのPrompt Brief）"
+      >
         <div className="panel-heading">
-          <h2>Selected Node Prompt Brief</h2>
+          <h2>Selected Node Prompt Brief（選択中NodeのPrompt Brief）</h2>
         </div>
-        <p className="helper-text">Select a workflow step to edit its Prompt Brief.</p>
+        <p className="helper-text">Prompt Brief を編集するWorkflow Stepを選択してください。</p>
       </section>
     );
   }
@@ -21,8 +24,8 @@ export function SelectedNodePromptBrief({ node, onChange }: SelectedNodePromptBr
   return (
     <PromptBriefEditor
       resetKey={node.id}
-      title={`Selected Node Prompt Brief: ${node.name}`}
-      helperText="One workflow step represents one prompt. This Prompt Brief belongs to the selected node."
+      title={`Selected Node Prompt Brief（選択中NodeのPrompt Brief）: ${node.name}`}
+      helperText="このWorkflow StepでCodexに何を依頼するかを定義します。1つのNodeは1つのPromptに対応します。"
       promptBrief={node.promptBrief}
       onChange={(updates) => onChange(node.id, updates)}
     />

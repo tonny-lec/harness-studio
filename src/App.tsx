@@ -55,10 +55,10 @@ export default function App() {
           className="ghost-button"
           type="button"
           onClick={returnToList}
-          aria-label="Back to list"
+          aria-label="一覧に戻る"
         >
           <ArrowLeft size={18} aria-hidden="true" />
-          Harnesses
+          Harness一覧
         </button>
         <div>
           <h1>{selectedHarness.name}</h1>
@@ -67,7 +67,7 @@ export default function App() {
       </header>
 
       <div className="studio-layout">
-        <section className="canvas-column" aria-label="Harness canvas">
+        <section className="canvas-column" aria-label="Harness canvas（ハーネスキャンバス）">
           <HarnessMetadataEditor harness={selectedHarness} onChange={updateHarness} />
           <ContextPackEditor
             harnessId={selectedHarness.id}

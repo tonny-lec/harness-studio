@@ -6,12 +6,18 @@ type HarnessValidationPanelProps = {
 };
 
 const severityLabels: Record<HarnessValidationIssue["severity"], string> = {
-  error: "Errors",
-  warning: "Warnings",
-  info: "Info",
+  error: "エラー",
+  warning: "警告",
+  info: "情報",
 };
 
 const severityOrder: HarnessValidationIssue["severity"][] = ["error", "warning", "info"];
+
+const scopeLabels: Record<HarnessValidationIssue["scope"], string> = {
+  harness: "Harness",
+  node: "Node",
+  edge: "Edge",
+};
 
 export function HarnessValidationPanel({ issues, onSelectNode }: HarnessValidationPanelProps) {
   const counts = severityOrder.reduce(
@@ -26,19 +32,19 @@ export function HarnessValidationPanel({ issues, onSelectNode }: HarnessValidati
     <section className="validation-panel">
       <div className="panel-title-row">
         <div>
-          <h2>Harness Validation</h2>
-          <p className="helper-text">Checks structural completeness and handoff coherence.</p>
+          <h2>ハーネス検証</h2>
+          <p className="helper-text">現在のハーネス設計に不足や不整合がないかを確認します。</p>
         </div>
-        <div className="validation-summary" aria-label="Validation issue counts">
-          <span>{issues.length} total</span>
-          <span className="severity-error">{counts.error} error</span>
-          <span className="severity-warning">{counts.warning} warning</span>
-          <span className="severity-info">{counts.info} info</span>
+        <div className="validation-summary" aria-label="検証issue数">
+          <span>合計 {issues.length}</span>
+          <span className="severity-error">エラー {counts.error}</span>
+          <span className="severity-warning">警告 {counts.warning}</span>
+          <span className="severity-info">情報 {counts.info}</span>
         </div>
       </div>
 
       {issues.length === 0 ? (
-        <p className="validation-empty">No validation issues found.</p>
+        <p className="validation-empty">検証issueはありません。</p>
       ) : (
         <div className="validation-list">
           {severityOrder.map((severity) => {
@@ -60,7 +66,7 @@ export function HarnessValidationPanel({ issues, onSelectNode }: HarnessValidati
                       key={issue.id}
                     >
                       <div>
-                        <span className="validation-scope">{issue.scope}</span>
+                        <span className="validation-scope">{scopeLabels[issue.scope]}</span>
                         <h4>{issue.title}</h4>
                       </div>
                       <p>{issue.message}</p>
@@ -73,7 +79,7 @@ export function HarnessValidationPanel({ issues, onSelectNode }: HarnessValidati
                           type="button"
                           onClick={() => onSelectNode(issue.targetId as string)}
                         >
-                          Select step
+                          このStepを選択
                         </button>
                       )}
                     </article>
