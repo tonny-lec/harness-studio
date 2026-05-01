@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { ContextPackEditor } from "./components/ContextPackEditor";
 import { ExportPreview } from "./components/ExportPreview";
@@ -15,6 +16,7 @@ import { useHarnessStore } from "./store/harnessStore";
 import { validateHarness } from "./utils/validateHarness";
 
 export default function App() {
+  const [selectedLoopId, setSelectedLoopId] = useState<string | null>(null);
   const {
     harnesses,
     selectedHarnessId,
@@ -44,6 +46,7 @@ export default function App() {
   const selectedHarness = harnesses.find((harness) => harness.id === selectedHarnessId) ?? null;
   const selectedNode = selectedHarness?.nodes.find((node) => node.id === selectedNodeId) ?? null;
   const selectedEdge = selectedHarness?.edges.find((edge) => edge.id === selectedEdgeId) ?? null;
+  const selectedLoop = selectedHarness?.loops.find((loop) => loop.id === selectedLoopId) ?? null;
   const selectedEdgeSource =
     selectedHarness?.nodes.find((node) => node.id === selectedEdge?.source) ?? null;
   const selectedEdgeTarget =
@@ -94,6 +97,7 @@ export default function App() {
             harness={selectedHarness}
             selectedNodeId={selectedNodeId}
             selectedEdgeId={selectedEdgeId}
+            selectedLoop={selectedLoop}
             onSelectNode={selectNode}
             onSelectEdge={selectEdge}
             onMoveNode={updateNodePosition}
@@ -102,6 +106,8 @@ export default function App() {
           <WorkflowLoopEditor
             loops={selectedHarness.loops}
             nodes={selectedHarness.nodes}
+            selectedLoopId={selectedLoopId}
+            onSelectLoop={setSelectedLoopId}
             onAddLoop={addWorkflowLoop}
             onUpdateLoop={updateWorkflowLoop}
             onDeleteLoop={deleteWorkflowLoop}

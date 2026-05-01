@@ -5,12 +5,14 @@ import type { HarnessNode, WorkflowLoop } from "../types/harness";
 type WorkflowLoopEditorProps = {
   loops: WorkflowLoop[];
   nodes: HarnessNode[];
+  selectedLoopId: string | null;
+  onSelectLoop: (loopId: string | null) => void;
   onAddLoop: () => string | null;
   onUpdateLoop: (loopId: string, updates: Partial<WorkflowLoop>) => void;
   onDeleteLoop: (loopId: string) => void;
 };
 
-type DraftFields = Pick<WorkflowLoop, "continueConditions" | "exitConditions" | "loopArtifacts">;
+type DraftFields = Pick<WorkflowLoop, "exitConditions" | "loopArtifacts">;
 
 const parseLines = (value: string) =>
   value
@@ -25,13 +27,11 @@ const stopKeyboardPropagation = (
 };
 
 const draftFromLoop = (loop: WorkflowLoop): Record<keyof DraftFields, string> => ({
-  continueConditions: loop.continueConditions.join("\n"),
   exitConditions: loop.exitConditions.join("\n"),
   loopArtifacts: loop.loopArtifacts.join("\n"),
 });
 
 const emptyDrafts = (): Record<keyof DraftFields, string> => ({
-  continueConditions: "",
   exitConditions: "",
   loopArtifacts: "",
 });
@@ -39,11 +39,12 @@ const emptyDrafts = (): Record<keyof DraftFields, string> => ({
 export function WorkflowLoopEditor({
   loops,
   nodes,
+  selectedLoopId,
+  onSelectLoop,
   onAddLoop,
   onUpdateLoop,
   onDeleteLoop,
 }: WorkflowLoopEditorProps) {
-  const [selectedLoopId, setSelectedLoopId] = useState<string | null>(loops[0]?.id ?? null);
   const selectedLoop = useMemo(
     () => loops.find((loop) => loop.id === selectedLoopId) ?? null,
     [loops, selectedLoopId],
@@ -55,8 +56,8 @@ export function WorkflowLoopEditor({
       return;
     }
 
-    setSelectedLoopId(loops[0]?.id ?? null);
-  }, [loops, selectedLoopId]);
+    onSelectLoop(loops[0]?.id ?? null);
+  }, [loops, selectedLoopId, onSelectLoop]);
 
   useEffect(() => {
     setDrafts(selectedLoop ? draftFromLoop(selectedLoop) : emptyDrafts());
@@ -66,7 +67,7 @@ export function WorkflowLoopEditor({
     const loopId = onAddLoop();
 
     if (loopId) {
-      setSelectedLoopId(loopId);
+      onSelectLoop(loopId);
     }
   };
 
@@ -93,10 +94,6 @@ export function WorkflowLoopEditor({
       entryNodeId: nodeIds.includes(selectedLoop.entryNodeId)
         ? selectedLoop.entryNodeId
         : (nodeIds[0] ?? ""),
-      evaluatorNodeId:
-        selectedLoop.evaluatorNodeId && nodeIds.includes(selectedLoop.evaluatorNodeId)
-          ? selectedLoop.evaluatorNodeId
-          : undefined,
     });
   };
 
@@ -127,7 +124,7 @@ export function WorkflowLoopEditor({
                 }
                 type="button"
                 key={loop.id}
-                onClick={() => setSelectedLoopId(loop.id)}
+                onClick={() => onSelectLoop(loop.id)}
               >
                 {loop.name || "Unnamed Workflow Loop"}
               </button>
@@ -182,26 +179,6 @@ export function WorkflowLoopEditor({
                 </label>
 
                 <label>
-                  Evaluator Node（継続判断Node）
-                  <select
-                    value={selectedLoop.evaluatorNodeId ?? ""}
-                    onKeyDown={stopKeyboardPropagation}
-                    onChange={(event) =>
-                      onUpdateLoop(selectedLoop.id, {
-                        evaluatorNodeId: event.target.value || undefined,
-                      })
-                    }
-                  >
-                    <option value="">未選択</option>
-                    {nodes.map((node) => (
-                      <option value={node.id} key={node.id}>
-                        {node.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
-                <label>
                   Exit Target Node（終了後の遷移先）
                   <select
                     value={selectedLoop.exitTargetNodeId ?? ""}
@@ -226,7 +203,8 @@ export function WorkflowLoopEditor({
                   <input
                     type="number"
                     min={1}
-                    value={selectedLoop.maxIterations ?? ""}
+                    required
+                    value={selectedLoop.maxIterations}
                     placeholder="例: 3"
                     onKeyDown={stopKeyboardPropagation}
                     onChange={(event) => {
@@ -234,7 +212,7 @@ export function WorkflowLoopEditor({
                       onUpdateLoop(selectedLoop.id, {
                         maxIterations:
                           event.target.value === "" || !Number.isFinite(parsedValue)
-                            ? undefined
+                            ? 0
                             : parsedValue,
                       });
                     }}
@@ -243,17 +221,6 @@ export function WorkflowLoopEditor({
               </div>
 
               <div className="workflow-loop-grid">
-                <label>
-                  Continue Conditions（継続条件）
-                  <textarea
-                    value={drafts.continueConditions}
-                    rows={4}
-                    placeholder="例:\n- validation failed\n- attempts remain"
-                    onKeyDown={stopKeyboardPropagation}
-                    onChange={(event) => updateLineField("continueConditions", event.target.value)}
-                  />
-                </label>
-
                 <label>
                   Exit Conditions（終了条件）
                   <textarea
@@ -273,19 +240,6 @@ export function WorkflowLoopEditor({
                     placeholder="例:\n- Code changes\n- Validation result\n- Fix notes"
                     onKeyDown={stopKeyboardPropagation}
                     onChange={(event) => updateLineField("loopArtifacts", event.target.value)}
-                  />
-                </label>
-
-                <label>
-                  Escalation Behavior（収束しない場合の扱い）
-                  <textarea
-                    value={selectedLoop.escalationBehavior ?? ""}
-                    rows={4}
-                    placeholder="例:\n最大反復回数に達したら未解決リスクとして報告し、人間の判断を求める。"
-                    onKeyDown={stopKeyboardPropagation}
-                    onChange={(event) =>
-                      onUpdateLoop(selectedLoop.id, { escalationBehavior: event.target.value })
-                    }
                   />
                 </label>
               </div>

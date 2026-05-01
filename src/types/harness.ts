@@ -43,13 +43,10 @@ export type WorkflowLoop = {
   name: string;
   nodeIds: string[];
   entryNodeId: string;
-  evaluatorNodeId?: string;
   exitTargetNodeId?: string;
-  maxIterations?: number;
-  continueConditions: string[];
+  maxIterations: number;
   exitConditions: string[];
   loopArtifacts: string[];
-  escalationBehavior?: string;
   notes?: string;
 };
 

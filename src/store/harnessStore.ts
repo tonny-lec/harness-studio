@@ -474,8 +474,6 @@ export const useHarnessStore = create<HarnessStore>()(
                     ...loop,
                     nodeIds: loop.nodeIds.filter((loopNodeId) => loopNodeId !== nodeId),
                     entryNodeId: loop.entryNodeId === nodeId ? "" : loop.entryNodeId,
-                    evaluatorNodeId:
-                      loop.evaluatorNodeId === nodeId ? undefined : loop.evaluatorNodeId,
                     exitTargetNodeId:
                       loop.exitTargetNodeId === nodeId ? undefined : loop.exitTargetNodeId,
                   })),

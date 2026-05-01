@@ -18,7 +18,7 @@ export const createEmptyWorkflowLoop = (id: string): WorkflowLoop => ({
   name: "New Workflow Loop",
   nodeIds: [],
   entryNodeId: "",
-  continueConditions: [],
+  maxIterations: 3,
   exitConditions: [],
   loopArtifacts: [],
 });
@@ -39,16 +39,13 @@ export const normalizeWorkflowLoop = (value: unknown): WorkflowLoop | null => {
     name: loop.name,
     nodeIds: isStringArray(loop.nodeIds) ? loop.nodeIds : [],
     entryNodeId: typeof loop.entryNodeId === "string" ? loop.entryNodeId : "",
-    evaluatorNodeId: typeof loop.evaluatorNodeId === "string" ? loop.evaluatorNodeId : undefined,
     exitTargetNodeId: typeof loop.exitTargetNodeId === "string" ? loop.exitTargetNodeId : undefined,
     maxIterations:
       typeof loop.maxIterations === "number" && Number.isFinite(loop.maxIterations)
         ? loop.maxIterations
-        : undefined,
-    continueConditions: isStringArray(loop.continueConditions) ? loop.continueConditions : [],
+        : 3,
     exitConditions: isStringArray(loop.exitConditions) ? loop.exitConditions : [],
     loopArtifacts: isStringArray(loop.loopArtifacts) ? loop.loopArtifacts : [],
-    escalationBehavior: typeof loop.escalationBehavior === "string" ? loop.escalationBehavior : "",
     notes: typeof loop.notes === "string" ? loop.notes : "",
   };
 };
@@ -65,16 +62,13 @@ export const migrateLegacyLoopEdge = (edge: HarnessEdge): WorkflowLoop | null =>
     name: `Loop: ${edge.source} -> ${edge.target}`,
     nodeIds: edge.source === edge.target ? [edge.source] : [edge.source, edge.target],
     entryNodeId: edge.target,
-    evaluatorNodeId: edge.source,
     exitTargetNodeId: undefined,
     maxIterations:
       typeof handoff.maxIterations === "number" && Number.isFinite(handoff.maxIterations)
         ? handoff.maxIterations
-        : undefined,
-    continueConditions: isStringArray(handoff.conditions) ? handoff.conditions : [],
+        : 3,
     exitConditions: isStringArray(handoff.stopConditions) ? handoff.stopConditions : [],
     loopArtifacts: isStringArray(handoff.transferredArtifacts) ? handoff.transferredArtifacts : [],
-    escalationBehavior: typeof handoff.failureBehavior === "string" ? handoff.failureBehavior : "",
     notes: typeof handoff.notes === "string" ? handoff.notes : "",
   };
 };

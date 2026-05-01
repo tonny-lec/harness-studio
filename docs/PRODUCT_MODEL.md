@@ -44,7 +44,9 @@ It describes transferred artifacts, handoff conditions, and notes for the connec
 
 Workflow Loop = a harness-level control structure that repeats a sequence of workflow steps until exit conditions are met or max iterations are reached.
 
-It can reference workflow steps, an entry step, an optional evaluator step, and an optional exit target step. It is not an Edge and it is not a Node. Edges remain one-way handoff connections.
+It can reference workflow steps, an entry step, and an optional exit target step. It is the source of truth for repetition. It is not an Edge and it is not a Node. Edges remain one-way handoff connections.
+
+If exit conditions are met, the loop exits. If exit conditions are not met and max iterations remain, the loop continues. If max iterations are reached before exit conditions are met, the loop stops and the unresolved state should be reported.
 
 ### Repository Guidance Lite
 

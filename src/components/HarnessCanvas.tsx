@@ -17,7 +17,7 @@ import {
   type OnNodesChange,
   type OnNodeDrag,
 } from "@xyflow/react";
-import type { Harness, HarnessEdge, HarnessNode } from "../types/harness";
+import type { Harness, HarnessEdge, HarnessNode, WorkflowLoop } from "../types/harness";
 import { createEmptyHandoffContract } from "../utils/stepContract";
 import { TaskNode } from "./nodes/TaskNode";
 import { ContextNode } from "./nodes/ContextNode";
@@ -37,6 +37,7 @@ type HarnessCanvasProps = {
   harness: Harness;
   selectedNodeId: string | null;
   selectedEdgeId: string | null;
+  selectedLoop: WorkflowLoop | null;
   onSelectNode: (nodeId: string | null) => void;
   onSelectEdge: (edgeId: string | null) => void;
   onMoveNode: (nodeId: string, position: HarnessNode["position"]) => void;
@@ -47,6 +48,7 @@ export function HarnessCanvas({
   harness,
   selectedNodeId,
   selectedEdgeId,
+  selectedLoop,
   onSelectNode,
   onSelectEdge,
   onMoveNode,
@@ -58,10 +60,25 @@ export function HarnessCanvas({
         id: node.id,
         type: node.type,
         position: node.position,
-        data: node,
+        data: {
+          ...node,
+          loopMembership: selectedLoop?.nodeIds.includes(node.id)
+            ? {
+                isInSelectedLoop: true,
+                isLoopEntry: selectedLoop.entryNodeId === node.id,
+                isLoopExitTarget: selectedLoop.exitTargetNodeId === node.id,
+                loopName: selectedLoop.name,
+              }
+            : {
+                isInSelectedLoop: false,
+                isLoopEntry: false,
+                isLoopExitTarget: selectedLoop?.exitTargetNodeId === node.id,
+                loopName: selectedLoop?.name ?? "",
+              },
+        },
         selected: node.id === selectedNodeId,
       })),
-    [harness.nodes, selectedNodeId],
+    [harness.nodes, selectedNodeId, selectedLoop],
   );
 
   const edges = useMemo<Edge[]>(

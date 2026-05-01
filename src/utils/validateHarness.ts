@@ -272,20 +272,6 @@ const validateLoop = (
     );
   }
 
-  if (loop.evaluatorNodeId && !nodeIds.has(loop.evaluatorNodeId)) {
-    issues.push(
-      issue(
-        `loop-${loop.id}-evaluator-node`,
-        "warning",
-        "loop",
-        "Workflow Loop の評価Nodeが不正です",
-        `${loop.name} のevaluator nodeが存在しないNodeを参照しています。`,
-        "Evaluator Nodeを現在のHarness内のNodeに変更してください。",
-        loop.id,
-      ),
-    );
-  }
-
   if (loop.exitTargetNodeId && !nodeIds.has(loop.exitTargetNodeId)) {
     issues.push(
       issue(
@@ -309,20 +295,6 @@ const validateLoop = (
         "Workflow Loop の最大反復回数が未設定です",
         `${loop.name} のmax iterationsが有効な正の整数として設定されていません。`,
         "Max Iterationsに、Loopを何回まで許容するかを設定してください。",
-        loop.id,
-      ),
-    );
-  }
-
-  if (!hasItems(loop.continueConditions)) {
-    issues.push(
-      issue(
-        `loop-${loop.id}-continue-conditions`,
-        "warning",
-        "loop",
-        "Workflow Loop の継続条件が未入力です",
-        `${loop.name} は、どの条件で次の反復へ進むかが定義されていません。`,
-        "Continue Conditionsに反復を続ける条件を追加してください。",
         loop.id,
       ),
     );

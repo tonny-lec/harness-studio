@@ -311,6 +311,35 @@ h2 {
   border-color: #2251d1;
 }
 
+.harness-node.is-in-selected-loop {
+  border-color: #7c4dff;
+  box-shadow:
+    0 0 0 4px rgba(124, 77, 255, 0.16),
+    0 8px 18px rgba(20, 29, 43, 0.12);
+}
+
+.harness-node.is-loop-exit-target {
+  border-color: #00866a;
+  box-shadow:
+    0 0 0 4px rgba(0, 134, 106, 0.14),
+    0 8px 18px rgba(20, 29, 43, 0.12);
+}
+
+.harness-node-loop-badge {
+  display: inline-flex;
+  align-items: center;
+  width: max-content;
+  margin-top: 6px;
+  padding: 3px 7px;
+  color: #4324a7;
+  background: #f1edff;
+  border: 1px solid #cbbcff;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
 .harness-node-task {
   border-top-color: #2f6fed;
 }

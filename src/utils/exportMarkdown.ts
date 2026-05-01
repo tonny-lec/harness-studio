@@ -188,19 +188,18 @@ ${list(
 )}
 
 - Entry node: ${nodeName(harness, loop.entryNodeId)}
-- Evaluator node: ${nodeName(harness, loop.evaluatorNodeId)}
 - Exit target: ${nodeName(harness, loop.exitTargetNodeId)}
-${loop.maxIterations ? `- Max iterations: ${loop.maxIterations}` : "- Max iterations: Not specified"}
-
-Continue conditions:
-${list(loop.continueConditions, "No continue conditions captured.")}
+- Max iterations: ${loop.maxIterations}
 
 Exit conditions:
 ${list(loop.exitConditions, "No exit conditions captured.")}
 
 Loop artifacts:
 ${list(loop.loopArtifacts, "No loop artifacts captured.")}
-${loop.escalationBehavior ? `\nEscalation behavior:\n- ${loop.escalationBehavior}` : ""}
+
+Default unresolved behavior:
+- If max iterations are reached before exit conditions are met, stop and report the unresolved state.
+
 ${loop.notes ? `\nNotes:\n- ${loop.notes}` : ""}`,
     )
     .join("\n\n");
