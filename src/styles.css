@@ -311,6 +311,13 @@ h2 {
   border-color: #2251d1;
 }
 
+.harness-node.is-in-any-loop {
+  border-color: #b7a5f5;
+  box-shadow:
+    0 0 0 3px rgba(124, 77, 255, 0.08),
+    0 8px 18px rgba(20, 29, 43, 0.12);
+}
+
 .harness-node.is-in-selected-loop {
   border-color: #7c4dff;
   box-shadow:
@@ -338,6 +345,12 @@ h2 {
   font-size: 10px;
   font-weight: 900;
   text-transform: uppercase;
+}
+
+.harness-node-loop-membership {
+  color: #344255;
+  background: #f7f8fb;
+  border-color: #d6dde8;
 }
 
 .harness-node-task {
@@ -588,15 +601,17 @@ h2 {
   padding: 16px;
 }
 
-.workflow-loop-list {
+.workflow-loop-overview {
   display: grid;
   align-content: start;
   gap: 8px;
 }
 
-.loop-list-item {
+.loop-summary-card {
+  display: grid;
+  gap: 5px;
   min-height: 36px;
-  padding: 8px 10px;
+  padding: 10px;
   text-align: left;
   color: #243246;
   background: #fbfcfe;
@@ -605,15 +620,66 @@ h2 {
   font-weight: 800;
 }
 
-.loop-list-item.is-selected {
+.loop-summary-card.is-selected {
   color: #2251d1;
   border-color: #8aa2d8;
+  box-shadow: 0 0 0 3px rgba(34, 81, 209, 0.12);
+}
+
+.loop-summary-title {
+  font-size: 14px;
+}
+
+.loop-summary-muted {
+  color: #657386;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.loop-status {
+  width: max-content;
+  border-radius: 999px;
+  padding: 3px 7px;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.status-ok {
+  color: #006f58;
+  background: #e8f7f2;
+}
+
+.status-warning {
+  color: #93540f;
+  background: #fff3df;
+}
+
+.status-incomplete {
+  color: #8f241f;
+  background: #fff0ee;
 }
 
 .workflow-loop-editor,
 .workflow-loop-grid {
   display: grid;
   gap: 12px;
+}
+
+.workflow-loop-selected-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.workflow-loop-selected-summary span {
+  border: 1px solid #d6dde8;
+  border-radius: 999px;
+  padding: 4px 8px;
+  color: #526173;
+  background: #fbfcfe;
+  font-size: 12px;
+  font-weight: 800;
 }
 
 .workflow-loop-grid {

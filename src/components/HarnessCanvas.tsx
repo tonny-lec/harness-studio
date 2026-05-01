@@ -62,23 +62,19 @@ export function HarnessCanvas({
         position: node.position,
         data: {
           ...node,
-          loopMembership: selectedLoop?.nodeIds.includes(node.id)
-            ? {
-                isInSelectedLoop: true,
-                isLoopEntry: selectedLoop.entryNodeId === node.id,
-                isLoopExitTarget: selectedLoop.exitTargetNodeId === node.id,
-                loopName: selectedLoop.name,
-              }
-            : {
-                isInSelectedLoop: false,
-                isLoopEntry: false,
-                isLoopExitTarget: selectedLoop?.exitTargetNodeId === node.id,
-                loopName: selectedLoop?.name ?? "",
-              },
+          loopMembership: {
+            loopNames: harness.loops
+              .filter((loop) => loop.nodeIds.includes(node.id))
+              .map((loop) => loop.name),
+            isInSelectedLoop: Boolean(selectedLoop?.nodeIds.includes(node.id)),
+            isLoopEntry: selectedLoop?.entryNodeId === node.id,
+            isLoopExitTarget: selectedLoop?.exitTargetNodeId === node.id,
+            selectedLoopName: selectedLoop?.name ?? "",
+          },
         },
         selected: node.id === selectedNodeId,
       })),
-    [harness.nodes, selectedNodeId, selectedLoop],
+    [harness.nodes, harness.loops, selectedNodeId, selectedLoop],
   );
 
   const edges = useMemo<Edge[]>(

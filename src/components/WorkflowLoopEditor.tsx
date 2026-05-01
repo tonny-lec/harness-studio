@@ -36,6 +36,29 @@ const emptyDrafts = (): Record<keyof DraftFields, string> => ({
   loopArtifacts: "",
 });
 
+const nodeName = (nodes: HarnessNode[], nodeId: string | undefined) =>
+  nodeId ? (nodes.find((node) => node.id === nodeId)?.name ?? "不明なNode") : "未選択";
+
+const loopStatus = (loop: WorkflowLoop, nodes: HarnessNode[]) => {
+  const nodeIds = new Set(nodes.map((node) => node.id));
+
+  if (
+    loop.nodeIds.length === 0 ||
+    !loop.entryNodeId ||
+    !nodeIds.has(loop.entryNodeId) ||
+    !Number.isInteger(loop.maxIterations) ||
+    loop.maxIterations < 1
+  ) {
+    return { label: "Incomplete", className: "status-incomplete" };
+  }
+
+  if (loop.exitConditions.length === 0) {
+    return { label: "Needs attention", className: "status-warning" };
+  }
+
+  return { label: "OK", className: "status-ok" };
+};
+
 export function WorkflowLoopEditor({
   loops,
   nodes,
@@ -116,23 +139,49 @@ export function WorkflowLoopEditor({
         <p className="workflow-loop-empty">Workflow Loop はまだありません。</p>
       ) : (
         <div className="workflow-loop-body">
-          <div className="workflow-loop-list" aria-label="Workflow Loop一覧">
-            {loops.map((loop) => (
-              <button
-                className={
-                  loop.id === selectedLoopId ? "loop-list-item is-selected" : "loop-list-item"
-                }
-                type="button"
-                key={loop.id}
-                onClick={() => onSelectLoop(loop.id)}
-              >
-                {loop.name || "Unnamed Workflow Loop"}
-              </button>
-            ))}
+          <div className="workflow-loop-overview" aria-label="Workflow Loop一覧">
+            {loops.map((loop) => {
+              const status = loopStatus(loop, nodes);
+              const includedNames = loop.nodeIds.map((nodeId) => nodeName(nodes, nodeId));
+
+              return (
+                <button
+                  className={
+                    loop.id === selectedLoopId
+                      ? "loop-summary-card is-selected"
+                      : "loop-summary-card"
+                  }
+                  type="button"
+                  key={loop.id}
+                  onClick={() => onSelectLoop(loop.id)}
+                >
+                  <span className="loop-summary-title">{loop.name || "Unnamed Workflow Loop"}</span>
+                  <span className={`loop-status ${status.className}`}>{status.label}</span>
+                  <span>{loop.nodeIds.length} nodes</span>
+                  {includedNames.length > 0 && (
+                    <span className="loop-summary-muted">{includedNames.join(" -> ")}</span>
+                  )}
+                  <span>Entry: {nodeName(nodes, loop.entryNodeId)}</span>
+                  <span>Exit: {nodeName(nodes, loop.exitTargetNodeId)}</span>
+                  <span>Max: {loop.maxIterations}</span>
+                </button>
+              );
+            })}
           </div>
 
           {selectedLoop && (
             <div className="workflow-loop-editor">
+              <div className="workflow-loop-selected-summary">
+                <span>
+                  Included:{" "}
+                  {selectedLoop.nodeIds.map((nodeId) => nodeName(nodes, nodeId)).join(" -> ") ||
+                    "なし"}
+                </span>
+                <span>Entry: {nodeName(nodes, selectedLoop.entryNodeId)}</span>
+                <span>Exit: {nodeName(nodes, selectedLoop.exitTargetNodeId)}</span>
+                <span>Max: {selectedLoop.maxIterations}</span>
+              </div>
+
               <label>
                 Name（名前）
                 <input
