@@ -84,6 +84,12 @@ export default function App() {
     setSelectedLoopId(loopId);
   };
 
+  const handleSelectHarnessDetails = () => {
+    selectNode(null);
+    selectEdge(null);
+    setSelectedLoopId(null);
+  };
+
   const handleAddLoop = () => {
     const loopId = addWorkflowLoop();
     if (loopId) {
@@ -130,6 +136,7 @@ export default function App() {
               selectedNodeId={selectedNodeId}
               selectedEdgeId={selectedEdgeId}
               selectedLoopId={selectedLoopId}
+              onSelectHarnessDetails={handleSelectHarnessDetails}
               onSelectNode={handleSelectNode}
               onSelectEdge={handleSelectEdge}
               onSelectLoop={handleSelectLoop}

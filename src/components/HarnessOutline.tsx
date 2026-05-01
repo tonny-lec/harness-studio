@@ -1,4 +1,13 @@
-import { Plus } from "lucide-react";
+import {
+  Cable,
+  FileOutput,
+  FileText,
+  Package,
+  Plus,
+  Repeat2,
+  ShieldAlert,
+  Workflow,
+} from "lucide-react";
 import type { Harness, HarnessValidationIssue } from "../types/harness";
 
 type HarnessOutlineProps = {
@@ -7,6 +16,7 @@ type HarnessOutlineProps = {
   selectedNodeId: string | null;
   selectedEdgeId: string | null;
   selectedLoopId: string | null;
+  onSelectHarnessDetails: () => void;
   onSelectNode: (nodeId: string) => void;
   onSelectEdge: (edgeId: string) => void;
   onSelectLoop: (loopId: string) => void;
@@ -34,6 +44,7 @@ export function HarnessOutline({
   selectedNodeId,
   selectedEdgeId,
   selectedLoopId,
+  onSelectHarnessDetails,
   onSelectNode,
   onSelectEdge,
   onSelectLoop,
@@ -48,18 +59,42 @@ export function HarnessOutline({
 
   return (
     <section className="harness-outline-panel">
-      <h2>Harness Outline</h2>
+      <div className="outline-header">
+        <div>
+          <h2>Harness Outline</h2>
+          <p>構造を選択してCanvasとInspectorを操作します。</p>
+        </div>
+      </div>
 
       <section className="outline-section">
         <h3>Harness Overview</h3>
-        <p>{harness.nodes.length} steps</p>
-        <p>{harness.edges.length} connections</p>
-        <p>{harness.loops.length} workflow loops</p>
+        <button
+          className="outline-item outline-item-primary"
+          type="button"
+          onClick={onSelectHarnessDetails}
+        >
+          <span>
+            <FileText size={15} aria-hidden="true" />
+            {harness.name}
+          </span>
+          <small>{harness.description || "説明なし"}</small>
+        </button>
+        <div className="outline-metrics" aria-label="Harness summary">
+          <span>{harness.nodes.length} steps</span>
+          <span>{harness.edges.length} links</span>
+          <span>{harness.loops.length} loops</span>
+        </div>
       </section>
 
       <section className="outline-section">
         <h3>Context Pack</h3>
-        <p>{contextPackCount} reusable items</p>
+        <button className="outline-item" type="button" onClick={onSelectHarnessDetails}>
+          <span>
+            <Package size={15} aria-hidden="true" />
+            Shared context
+          </span>
+          <small>{contextPackCount} reusable items</small>
+        </button>
       </section>
 
       <section className="outline-section">
@@ -72,7 +107,10 @@ export function HarnessOutline({
               key={node.id}
               onClick={() => onSelectNode(node.id)}
             >
-              <span>{node.name}</span>
+              <span>
+                <Workflow size={15} aria-hidden="true" />
+                {node.name}
+              </span>
               <small>{node.type}</small>
             </button>
           ))}
@@ -90,6 +128,7 @@ export function HarnessOutline({
               onClick={() => onSelectEdge(edge.id)}
             >
               <span>
+                <Cable size={15} aria-hidden="true" />
                 {nodeName(harness, edge.source)} → {nodeName(harness, edge.target)}
               </span>
               <small>{edge.handoff?.kind ?? "normal"}</small>
@@ -114,7 +153,10 @@ export function HarnessOutline({
               key={loop.id}
               onClick={() => onSelectLoop(loop.id)}
             >
-              <span>{loop.name}</span>
+              <span>
+                <Repeat2 size={15} aria-hidden="true" />
+                {loop.name}
+              </span>
               <small>
                 {loop.nodeIds.length} nodes / max {loop.maxIterations}
               </small>
@@ -127,7 +169,10 @@ export function HarnessOutline({
       <section className="outline-section">
         <h3>Validation Issues</h3>
         <button className="outline-item" type="button" onClick={onOpenValidate}>
-          <span>{issues.length} issues</span>
+          <span>
+            <ShieldAlert size={15} aria-hidden="true" />
+            {issues.length} issues
+          </span>
           <small>Open Validate</small>
         </button>
       </section>
@@ -135,7 +180,10 @@ export function HarnessOutline({
       <section className="outline-section">
         <h3>Exports</h3>
         <button className="outline-item" type="button" onClick={onOpenExport}>
-          <span>Blueprint / Prompts</span>
+          <span>
+            <FileOutput size={15} aria-hidden="true" />
+            Blueprint / Prompts
+          </span>
           <small>Open Export</small>
         </button>
       </section>
