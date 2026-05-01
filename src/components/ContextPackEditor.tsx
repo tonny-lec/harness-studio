@@ -6,6 +6,7 @@ type ContextPackEditorProps = {
   harnessId: string;
   contextPack: ContextPack;
   onChange: (updates: Partial<ContextPack>) => void;
+  defaultOpen?: boolean;
 };
 
 const parseLines = (value: string) =>
@@ -54,8 +55,13 @@ const fieldPlaceholders: Record<keyof ContextPack, string> = {
     "例:\n- 古いlocalStorageデータには新しいfieldが存在しない可能性がある\n- React Flowのcontrolled stateではonNodesChange/onEdgesChangeが必要",
 };
 
-export function ContextPackEditor({ harnessId, contextPack, onChange }: ContextPackEditorProps) {
-  const [isOpen, setIsOpen] = useState(false);
+export function ContextPackEditor({
+  harnessId,
+  contextPack,
+  onChange,
+  defaultOpen = false,
+}: ContextPackEditorProps) {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
   const [drafts, setDrafts] = useState(draftFromPack(contextPack));
 
   useEffect(() => {

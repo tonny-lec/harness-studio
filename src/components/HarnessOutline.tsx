@@ -4,9 +4,12 @@ import type { Harness, HarnessValidationIssue } from "../types/harness";
 type HarnessOutlineProps = {
   harness: Harness;
   issues: HarnessValidationIssue[];
+  selectedOverview: "harness" | "context" | null;
   selectedNodeId: string | null;
   selectedEdgeId: string | null;
   selectedLoopId: string | null;
+  onSelectHarnessOverview: () => void;
+  onSelectContextPack: () => void;
   onSelectNode: (nodeId: string) => void;
   onSelectEdge: (edgeId: string) => void;
   onSelectLoop: (loopId: string) => void;
@@ -31,9 +34,12 @@ const loopStatus = (issues: HarnessValidationIssue[], loopId: string) => {
 export function HarnessOutline({
   harness,
   issues,
+  selectedOverview,
   selectedNodeId,
   selectedEdgeId,
   selectedLoopId,
+  onSelectHarnessOverview,
+  onSelectContextPack,
   onSelectNode,
   onSelectEdge,
   onSelectLoop,
@@ -52,14 +58,28 @@ export function HarnessOutline({
 
       <section className="outline-section">
         <h3>Harness Overview</h3>
-        <p>{harness.nodes.length} steps</p>
-        <p>{harness.edges.length} connections</p>
-        <p>{harness.loops.length} workflow loops</p>
+        <button
+          className={selectedOverview === "harness" ? "outline-item is-selected" : "outline-item"}
+          type="button"
+          onClick={onSelectHarnessOverview}
+        >
+          <span>{harness.name}</span>
+          <small>{harness.nodes.length} steps</small>
+          <small>{harness.edges.length} connections</small>
+          <small>{harness.loops.length} workflow loops</small>
+        </button>
       </section>
 
       <section className="outline-section">
         <h3>Context Pack</h3>
-        <p>{contextPackCount} reusable items</p>
+        <button
+          className={selectedOverview === "context" ? "outline-item is-selected" : "outline-item"}
+          type="button"
+          onClick={onSelectContextPack}
+        >
+          <span>Shared context</span>
+          <small>{contextPackCount} reusable items</small>
+        </button>
       </section>
 
       <section className="outline-section">

@@ -27,9 +27,7 @@ export function NodeEditor({ node, onChange, onDelete, children }: NodeEditorPro
   return (
     <aside className="side-panel">
       <h2>Selected Workflow Step（選択中Step）</h2>
-      <p className="empty-state">
-        選択中Stepの基本情報だけを編集します。Prompt Briefはメイン領域で編集します。
-      </p>
+      <p className="empty-state">選択中Stepの基本情報、Prompt Brief、Step Contractを編集します。</p>
       <label>
         Name（名前）
         <input

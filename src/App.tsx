@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowLeft } from "lucide-react";
-import { ContextPackEditor } from "./components/ContextPackEditor";
+import { ContextPackInspector } from "./components/ContextPackInspector";
 import { ExportPreview } from "./components/ExportPreview";
 import { HarnessCanvas } from "./components/HarnessCanvas";
 import { HarnessList } from "./components/HarnessList";
-import { HarnessMetadataEditor } from "./components/HarnessMetadataEditor";
 import { HarnessOutline } from "./components/HarnessOutline";
+import { HarnessOverviewInspector } from "./components/HarnessOverviewInspector";
 import { HarnessValidationPanel } from "./components/HarnessValidationPanel";
 import { NodeAddToolbar } from "./components/NodeAddToolbar";
 import { NodeEditor } from "./components/NodeEditor";
@@ -17,10 +17,12 @@ import { useHarnessStore } from "./store/harnessStore";
 import { validateHarness } from "./utils/validateHarness";
 
 type WorkspaceTab = "design" | "validate" | "export";
+type OverviewSelection = "harness" | "context" | null;
 
 export default function App() {
   const [selectedLoopId, setSelectedLoopId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<WorkspaceTab>("design");
+  const [selectedOverview, setSelectedOverview] = useState<OverviewSelection>("harness");
   const {
     harnesses,
     selectedHarnessId,
@@ -57,6 +59,11 @@ export default function App() {
     selectedHarness?.nodes.find((node) => node.id === selectedEdge?.target) ?? null;
   const validationIssues = selectedHarness ? validateHarness(selectedHarness) : [];
 
+  useEffect(() => {
+    setSelectedOverview("harness");
+    setSelectedLoopId(null);
+  }, [selectedHarnessId]);
+
   if (!selectedHarness) {
     return (
       <HarnessList
@@ -69,19 +76,29 @@ export default function App() {
   }
 
   const handleSelectNode = (nodeId: string | null) => {
+    setSelectedOverview(null);
     setSelectedLoopId(null);
     selectNode(nodeId);
   };
 
   const handleSelectEdge = (edgeId: string | null) => {
+    setSelectedOverview(null);
     setSelectedLoopId(null);
     selectEdge(edgeId);
   };
 
   const handleSelectLoop = (loopId: string | null) => {
+    setSelectedOverview(null);
     selectNode(null);
     selectEdge(null);
     setSelectedLoopId(loopId);
+  };
+
+  const handleSelectOverview = (selection: Exclude<OverviewSelection, null>) => {
+    selectNode(null);
+    selectEdge(null);
+    setSelectedLoopId(null);
+    setSelectedOverview(selection);
   };
 
   const handleAddLoop = () => {
@@ -124,18 +141,15 @@ export default function App() {
       {activeTab === "design" && (
         <div className="workspace-design-layout">
           <aside className="workspace-left-panel">
-            <HarnessMetadataEditor harness={selectedHarness} onChange={updateHarness} />
-            <ContextPackEditor
-              harnessId={selectedHarness.id}
-              contextPack={selectedHarness.contextPack}
-              onChange={updateContextPack}
-            />
             <HarnessOutline
               harness={selectedHarness}
               issues={validationIssues}
+              selectedOverview={selectedOverview}
               selectedNodeId={selectedNodeId}
               selectedEdgeId={selectedEdgeId}
               selectedLoopId={selectedLoopId}
+              onSelectHarnessOverview={() => handleSelectOverview("harness")}
+              onSelectContextPack={() => handleSelectOverview("context")}
               onSelectNode={handleSelectNode}
               onSelectEdge={handleSelectEdge}
               onSelectLoop={handleSelectLoop}
@@ -167,7 +181,19 @@ export default function App() {
             />
           </section>
 
-          {selectedEdge ? (
+          {selectedOverview === "harness" ? (
+            <HarnessOverviewInspector
+              harness={selectedHarness}
+              issues={validationIssues}
+              onChange={updateHarness}
+            />
+          ) : selectedOverview === "context" ? (
+            <ContextPackInspector
+              harnessId={selectedHarness.id}
+              contextPack={selectedHarness.contextPack}
+              onChange={updateContextPack}
+            />
+          ) : selectedEdge ? (
             <SelectedConnectionEditor
               edge={selectedEdge}
               sourceNode={selectedEdgeSource}
