@@ -4,7 +4,9 @@ import {
   applyEdgeChanges,
   Background,
   Controls,
+  MarkerType,
   MiniMap,
+  Panel,
   ReactFlow,
   type Connection,
   type Edge,
@@ -23,15 +25,21 @@ import { TaskNode } from "./nodes/TaskNode";
 import { ContextNode } from "./nodes/ContextNode";
 import { AgentNode } from "./nodes/AgentNode";
 import { GateNode } from "./nodes/GateNode";
+import { LoopRegionNode } from "./nodes/LoopRegionNode";
 import { ReviewNode } from "./nodes/ReviewNode";
 
 const nodeTypes: NodeTypes = {
+  loopRegion: LoopRegionNode,
   task: TaskNode,
   context: ContextNode,
   agent: AgentNode,
   review: ReviewNode,
   gate: GateNode,
 };
+
+const NODE_WIDTH = 220;
+const NODE_HEIGHT = 140;
+const LOOP_PADDING = 44;
 
 type HarnessCanvasProps = {
   harness: Harness;
@@ -54,28 +62,70 @@ export function HarnessCanvas({
   onMoveNode,
   onEdgesChange,
 }: HarnessCanvasProps) {
-  const nodes = useMemo<Node[]>(
-    () =>
-      harness.nodes.map((node) => ({
-        id: node.id,
-        type: node.type,
-        position: node.position,
-        data: {
-          ...node,
-          loopMembership: {
-            loopNames: harness.loops
-              .filter((loop) => loop.nodeIds.includes(node.id))
-              .map((loop) => loop.name),
-            isInSelectedLoop: Boolean(selectedLoop?.nodeIds.includes(node.id)),
-            isLoopEntry: selectedLoop?.entryNodeId === node.id,
-            isLoopExitTarget: selectedLoop?.exitTargetNodeId === node.id,
-            selectedLoopName: selectedLoop?.name ?? "",
-          },
+  const nodes = useMemo<Node[]>(() => {
+    const workflowNodes: Node[] = harness.nodes.map((node) => ({
+      id: node.id,
+      type: node.type,
+      position: node.position,
+      data: {
+        ...node,
+        loopMembership: {
+          loopNames: harness.loops
+            .filter((loop) => loop.nodeIds.includes(node.id))
+            .map((loop) => loop.name),
+          isInSelectedLoop: Boolean(selectedLoop?.nodeIds.includes(node.id)),
+          isLoopEntry: selectedLoop?.entryNodeId === node.id,
+          isLoopExitTarget: selectedLoop?.exitTargetNodeId === node.id,
+          selectedLoopName: selectedLoop?.name ?? "",
         },
-        selected: node.id === selectedNodeId,
-      })),
-    [harness.nodes, harness.loops, selectedNodeId, selectedLoop],
-  );
+      },
+      selected: node.id === selectedNodeId,
+      zIndex: 2,
+    }));
+    const loopRegions = harness.loops.reduce<Node[]>((regions, loop) => {
+      const loopNodes = harness.nodes.filter((node) => loop.nodeIds.includes(node.id));
+
+      if (loopNodes.length === 0) {
+        return regions;
+      }
+
+      const minX = Math.min(...loopNodes.map((node) => node.position.x));
+      const minY = Math.min(...loopNodes.map((node) => node.position.y));
+      const maxX = Math.max(...loopNodes.map((node) => node.position.x + NODE_WIDTH));
+      const maxY = Math.max(...loopNodes.map((node) => node.position.y + NODE_HEIGHT));
+      const exitTargetName = loop.exitTargetNodeId
+        ? (harness.nodes.find((node) => node.id === loop.exitTargetNodeId)?.name ?? "")
+        : "";
+
+      regions.push({
+        id: `loop-region-${loop.id}`,
+        type: "loopRegion",
+        position: {
+          x: minX - LOOP_PADDING,
+          y: minY - LOOP_PADDING,
+        },
+        data: {
+          name: loop.name,
+          maxIterations: loop.maxIterations,
+          exitTargetName,
+          isSelected: selectedLoop?.id === loop.id,
+        },
+        style: {
+          width: maxX - minX + LOOP_PADDING * 2,
+          height: maxY - minY + LOOP_PADDING * 2,
+        },
+        draggable: false,
+        selectable: false,
+        connectable: false,
+        deletable: false,
+        zIndex: 0,
+      });
+
+      return regions;
+    }, []);
+
+    return [...loopRegions, ...workflowNodes];
+  }, [harness.nodes, harness.loops, selectedNodeId, selectedLoop]);
 
   const edges = useMemo<Edge[]>(
     () =>
@@ -83,7 +133,17 @@ export function HarnessCanvas({
         id: edge.id,
         source: edge.source,
         target: edge.target,
-        animated: true,
+        animated: edge.handoff?.kind === "conditional",
+        markerEnd: {
+          type: MarkerType.ArrowClosed,
+          width: 18,
+          height: 18,
+          color: edge.id === selectedEdgeId ? "#2251d1" : "#66758a",
+        },
+        style: {
+          stroke: edge.id === selectedEdgeId ? "#2251d1" : "#66758a",
+          strokeWidth: edge.id === selectedEdgeId ? 3 : 2,
+        },
         selected: edge.id === selectedEdgeId,
       })),
     [harness.edges, selectedEdgeId],
@@ -158,6 +218,11 @@ export function HarnessCanvas({
         onNodeDragStop={handleNodeDragStop}
         deleteKeyCode={["Backspace", "Delete"]}
       >
+        <Panel position="top-left" className="canvas-workspace-summary">
+          <span>{harness.nodes.length} steps</span>
+          <span>{harness.edges.length} connections</span>
+          <span>{harness.loops.length} loops</span>
+        </Panel>
         <Background />
         <MiniMap pannable zoomable />
         <Controls />
