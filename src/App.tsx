@@ -124,12 +124,6 @@ export default function App() {
       {activeTab === "design" && (
         <div className="workspace-design-layout">
           <aside className="workspace-left-panel">
-            <HarnessMetadataEditor harness={selectedHarness} onChange={updateHarness} />
-            <ContextPackEditor
-              harnessId={selectedHarness.id}
-              contextPack={selectedHarness.contextPack}
-              onChange={updateContextPack}
-            />
             <HarnessOutline
               harness={selectedHarness}
               issues={validationIssues}
@@ -181,15 +175,24 @@ export default function App() {
               onChange={updateWorkflowLoop}
               onDelete={deleteWorkflowLoop}
             />
-          ) : (
+          ) : selectedNode ? (
             <NodeEditor node={selectedNode} onChange={updateNode} onDelete={deleteNode}>
-              {selectedNode && (
-                <>
-                  <SelectedNodePromptBrief node={selectedNode} onChange={updatePromptBrief} />
-                  <SelectedNodeStepContract node={selectedNode} onChange={updateStepContract} />
-                </>
-              )}
+              <SelectedNodePromptBrief node={selectedNode} onChange={updatePromptBrief} />
+              <SelectedNodeStepContract node={selectedNode} onChange={updateStepContract} />
             </NodeEditor>
+          ) : (
+            <aside className="side-panel">
+              <h2>Harness Details（ハーネス詳細）</h2>
+              <p className="empty-state">
+                Workflow Step、Connection、Workflow Loopを選択すると、この領域で詳細を編集できます。
+              </p>
+              <HarnessMetadataEditor harness={selectedHarness} onChange={updateHarness} />
+              <ContextPackEditor
+                harnessId={selectedHarness.id}
+                contextPack={selectedHarness.contextPack}
+                onChange={updateContextPack}
+              />
+            </aside>
           )}
         </div>
       )}

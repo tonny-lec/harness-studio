@@ -575,13 +575,20 @@ h2 {
 }
 
 .side-panel .prompt-brief-panel,
+.side-panel .context-pack-panel,
+.side-panel .metadata-panel,
 .side-panel .step-contract-panel {
   border: 1px solid #e4e9f0;
   box-shadow: none;
 }
 
 .side-panel .prompt-brief-grid,
+.side-panel .context-pack-grid,
 .side-panel .step-contract-grid {
+  grid-template-columns: 1fr;
+}
+
+.side-panel .metadata-panel {
   grid-template-columns: 1fr;
 }
 
