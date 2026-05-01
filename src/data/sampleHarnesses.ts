@@ -54,7 +54,7 @@ export const sampleHarnesses: Harness[] = [
         inputs: ["User request", "Repository context"],
         outputs: ["Scoped task summary", "Acceptance notes"],
         constraints: ["Do not invent backend requirements", "Prefer existing project conventions"],
-        position: { x: 80, y: 120 },
+        position: { x: 60, y: 110 },
       },
       {
         id: "context-1",
@@ -71,7 +71,7 @@ export const sampleHarnesses: Harness[] = [
         inputs: ["Scoped task summary"],
         outputs: ["Relevant code references", "Implementation risks"],
         constraints: ["Keep context focused", "Avoid broad unrelated refactors"],
-        position: { x: 370, y: 60 },
+        position: { x: 320, y: 50 },
       },
       {
         id: "agent-1",
@@ -89,7 +89,7 @@ export const sampleHarnesses: Harness[] = [
         inputs: ["Acceptance notes", "Relevant code references"],
         outputs: ["Code changes", "Verification notes"],
         constraints: ["Use TypeScript", "Keep state local unless persistence is required"],
-        position: { x: 660, y: 130 },
+        position: { x: 580, y: 110 },
       },
       {
         id: "validation-1",
@@ -106,7 +106,7 @@ export const sampleHarnesses: Harness[] = [
         inputs: ["Code changes", "Verification notes"],
         outputs: ["Validation result", "Fix notes"],
         constraints: ["Report failed checks", "Stop when validation passes"],
-        position: { x: 920, y: 170 },
+        position: { x: 320, y: 300 },
       },
       {
         id: "review-1",
@@ -123,7 +123,7 @@ export const sampleHarnesses: Harness[] = [
         inputs: ["Code changes", "Verification notes"],
         outputs: ["Review findings", "Ready-to-run summary"],
         constraints: ["Report known gaps", "Do not claim unsupported integrations"],
-        position: { x: 1180, y: 80 },
+        position: { x: 580, y: 300 },
       },
     ],
     edges: [
@@ -186,7 +186,7 @@ export const sampleHarnesses: Harness[] = [
         inputs: ["Pull request notes"],
         outputs: ["Review checklist"],
         constraints: ["Lead with concrete findings"],
-        position: { x: 120, y: 120 },
+        position: { x: 60, y: 110 },
       },
       {
         id: "context-2",
@@ -203,7 +203,7 @@ export const sampleHarnesses: Harness[] = [
         inputs: ["Review checklist"],
         outputs: ["Risk map"],
         constraints: ["Stay on changed behavior"],
-        position: { x: 430, y: 70 },
+        position: { x: 320, y: 50 },
       },
       {
         id: "agent-2",
@@ -220,7 +220,7 @@ export const sampleHarnesses: Harness[] = [
         inputs: ["Risk map"],
         outputs: ["Ordered findings"],
         constraints: ["Avoid style-only comments"],
-        position: { x: 720, y: 140 },
+        position: { x: 580, y: 110 },
       },
       {
         id: "review-2",
@@ -237,7 +237,7 @@ export const sampleHarnesses: Harness[] = [
         inputs: ["Ordered findings"],
         outputs: ["Final review"],
         constraints: ["No unsupported claims"],
-        position: { x: 1010, y: 90 },
+        position: { x: 580, y: 300 },
       },
     ],
     edges: [

@@ -138,10 +138,12 @@ export function HarnessCanvas({
   return (
     <div className="canvas-shell">
       <ReactFlow
+        key={harness.id}
         nodes={nodes}
         edges={edges}
         nodeTypes={nodeTypes}
         fitView
+        fitViewOptions={{ padding: 0.16, maxZoom: 1 }}
         onConnect={handleConnect}
         onEdgesChange={handleEdgesChange}
         onNodesChange={handleNodesChange}
