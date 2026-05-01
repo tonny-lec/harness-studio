@@ -24,6 +24,10 @@ body {
   min-height: 100vh;
 }
 
+#root {
+  min-height: 100vh;
+}
+
 button,
 input,
 select,
@@ -35,10 +39,18 @@ button {
   cursor: pointer;
 }
 
-.list-screen,
-.studio-screen {
+.list-screen {
   min-height: 100vh;
   padding: 32px;
+}
+
+.studio-screen {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  min-height: 0;
+  padding: 32px;
+  overflow: hidden;
 }
 
 .list-header,
@@ -49,6 +61,11 @@ button {
   gap: 24px;
   max-width: 1180px;
   margin: 0 auto 28px;
+}
+
+.studio-header {
+  flex-shrink: 0;
+  width: 100%;
 }
 
 h1,
@@ -195,9 +212,19 @@ h2 {
   display: grid;
   grid-template-columns: 300px minmax(0, 1fr) 360px;
   gap: 18px;
+  flex: 1;
+  width: 100%;
   max-width: 1680px;
   margin: 0 auto;
-  min-height: calc(100vh - 150px);
+  min-height: 0;
+  overflow: hidden;
+}
+
+.workspace-left-panel,
+.workspace-canvas-panel,
+.workspace-design-layout > .side-panel {
+  min-width: 0;
+  min-height: 0;
 }
 
 .workspace-left-panel,
@@ -205,29 +232,34 @@ h2 {
   display: grid;
   align-content: start;
   gap: 14px;
-  min-width: 0;
 }
 
 .workspace-left-panel {
-  max-height: calc(100vh - 150px);
   overflow: auto;
 }
 
 .workspace-canvas-panel {
-  grid-template-rows: auto minmax(620px, calc(100vh - 220px));
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
 }
 
 .workspace-canvas-panel .canvas-shell {
-  min-height: 620px;
+  height: 100%;
+  min-height: 0;
 }
 
 .workspace-focus-panel {
+  flex: 1;
+  width: 100%;
   max-width: 1280px;
   margin: 0 auto;
+  min-height: 0;
+  overflow: auto;
 }
 
 .workspace-focus-panel .export-panel {
-  min-height: calc(100vh - 180px);
+  height: 100%;
+  min-height: 0;
 }
 
 .workspace-left-panel .metadata-panel {
@@ -467,8 +499,8 @@ h2 {
   flex-direction: column;
   gap: 14px;
   padding: 18px;
+  height: 100%;
   min-height: 0;
-  max-height: calc(100vh - 132px);
   overflow: auto;
 }
 
@@ -902,16 +934,26 @@ h2 {
 }
 
 @media (max-width: 980px) {
+  .studio-screen {
+    height: auto;
+    min-height: 100vh;
+    overflow: auto;
+  }
+
   .workspace-design-layout {
     grid-template-columns: 1fr;
+    flex: none;
+    overflow: visible;
   }
 
   .workspace-left-panel {
     max-height: none;
+    overflow: visible;
   }
 
   .workspace-canvas-panel {
     grid-template-rows: auto 520px;
+    overflow: visible;
   }
 
   .studio-layout {
@@ -946,7 +988,9 @@ h2 {
   }
 
   .side-panel {
+    height: auto;
     max-height: none;
+    overflow: visible;
   }
 }
 
