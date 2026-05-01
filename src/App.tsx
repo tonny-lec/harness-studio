@@ -4,11 +4,13 @@ import { ExportPreview } from "./components/ExportPreview";
 import { HarnessCanvas } from "./components/HarnessCanvas";
 import { HarnessList } from "./components/HarnessList";
 import { HarnessMetadataEditor } from "./components/HarnessMetadataEditor";
+import { HarnessValidationPanel } from "./components/HarnessValidationPanel";
 import { NodeAddToolbar } from "./components/NodeAddToolbar";
 import { NodeEditor } from "./components/NodeEditor";
 import { SelectedNodePromptBrief } from "./components/SelectedNodePromptBrief";
 import { SelectedNodeStepContract } from "./components/SelectedNodeStepContract";
 import { useHarnessStore } from "./store/harnessStore";
+import { validateHarness } from "./utils/validateHarness";
 
 export default function App() {
   const {
@@ -33,6 +35,7 @@ export default function App() {
 
   const selectedHarness = harnesses.find((harness) => harness.id === selectedHarnessId) ?? null;
   const selectedNode = selectedHarness?.nodes.find((node) => node.id === selectedNodeId) ?? null;
+  const validationIssues = selectedHarness ? validateHarness(selectedHarness) : [];
 
   if (!selectedHarness) {
     return (
@@ -81,6 +84,7 @@ export default function App() {
             onMoveNode={updateNodePosition}
             onEdgesChange={setEdges}
           />
+          <HarnessValidationPanel issues={validationIssues} onSelectNode={selectNode} />
           <ExportPreview harness={selectedHarness} selectedNode={selectedNode} />
         </section>
         <NodeEditor node={selectedNode} onChange={updateNode} onDelete={deleteNode} />

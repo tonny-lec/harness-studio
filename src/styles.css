@@ -167,7 +167,7 @@ h2 {
 
 .canvas-column {
   display: grid;
-  grid-template-rows: auto auto auto auto auto minmax(420px, 50vh) minmax(220px, 28vh);
+  grid-template-rows: auto auto auto auto auto minmax(420px, 50vh) auto minmax(220px, 28vh);
   gap: 18px;
   min-width: 0;
 }
@@ -175,6 +175,7 @@ h2 {
 .canvas-shell,
 .side-panel,
 .export-panel,
+.validation-panel,
 .metadata-panel,
 .node-toolbar,
 .prompt-brief-panel,
@@ -433,6 +434,111 @@ h2 {
   color: #8f241f;
 }
 
+.validation-panel {
+  display: grid;
+  gap: 0;
+}
+
+.validation-summary {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  color: #657386;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.validation-summary span,
+.validation-scope {
+  border: 1px solid #d6dde8;
+  border-radius: 999px;
+  padding: 4px 8px;
+  background: #fbfcfe;
+}
+
+.severity-error {
+  color: #8f241f;
+}
+
+.severity-warning {
+  color: #93540f;
+}
+
+.severity-info {
+  color: #2251d1;
+}
+
+.validation-empty {
+  padding: 16px;
+  color: #657386;
+  font-weight: 700;
+}
+
+.validation-list {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+}
+
+.validation-group {
+  display: grid;
+  gap: 10px;
+}
+
+.validation-group h3 {
+  margin: 0;
+  color: #344255;
+  font-size: 13px;
+  text-transform: uppercase;
+}
+
+.validation-issue {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid #dce2eb;
+  border-left-width: 4px;
+  border-radius: 8px;
+  background: #fbfcfe;
+}
+
+.validation-issue-error {
+  border-left-color: #c84037;
+}
+
+.validation-issue-warning {
+  border-left-color: #d98218;
+}
+
+.validation-issue-info {
+  border-left-color: #4776d8;
+}
+
+.validation-issue div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.validation-issue h4 {
+  margin: 0;
+  font-size: 14px;
+}
+
+.validation-issue p {
+  color: #526173;
+  line-height: 1.45;
+}
+
+.validation-recommendation {
+  font-weight: 700;
+}
+
+.validation-issue button {
+  justify-self: start;
+}
+
 .export-panel pre {
   height: calc(100% - 59px);
   margin: 0;
@@ -451,7 +557,7 @@ h2 {
   }
 
   .canvas-column {
-    grid-template-rows: auto auto auto auto auto 520px 260px;
+    grid-template-rows: auto auto auto auto auto 520px auto 260px;
   }
 
   .metadata-panel,
@@ -467,6 +573,10 @@ h2 {
   }
 
   .export-actions {
+    justify-content: flex-start;
+  }
+
+  .validation-summary {
     justify-content: flex-start;
   }
 

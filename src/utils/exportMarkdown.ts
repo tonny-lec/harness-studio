@@ -3,10 +3,12 @@ import type {
   HarnessEdge,
   HarnessNode,
   HarnessNodeType,
+  HarnessValidationIssue,
   PromptBrief,
   StepContract,
 } from "../types/harness";
 import { createEmptyPromptBrief } from "./promptBrief";
+import { validateHarness } from "./validateHarness";
 
 export type ExportFormat = "agents" | "investigation" | "implementation" | "review" | "blueprint";
 
@@ -144,6 +146,36 @@ const edgeLine = (harness: Harness, edge: HarnessEdge) => {
   ].filter(Boolean);
 
   return details.length > 0 ? `- ${base} (${details.join("; ")})` : `- ${base}`;
+};
+
+const validationCounts = (issues: HarnessValidationIssue[]) => ({
+  error: issues.filter((issue) => issue.severity === "error").length,
+  warning: issues.filter((issue) => issue.severity === "warning").length,
+  info: issues.filter((issue) => issue.severity === "info").length,
+});
+
+const validationIssueLine = (issue: HarnessValidationIssue) =>
+  `- ${issue.severity.toUpperCase()}: ${issue.title} (${issue.scope}) - ${issue.message}`;
+
+const validationSummary = (harness: Harness) => {
+  const issues = validateHarness(harness);
+  const counts = validationCounts(issues);
+  const visibleIssues = issues.slice(0, 12);
+  const remainingCount = issues.length - visibleIssues.length;
+
+  return `## Harness Validation Summary
+
+- Total issues: ${issues.length}
+- Errors: ${counts.error}
+- Warnings: ${counts.warning}
+- Info: ${counts.info}
+
+${
+  visibleIssues.length > 0
+    ? visibleIssues.map(validationIssueLine).join("\n")
+    : "- No validation issues found."
+}
+${remainingCount > 0 ? `\n- ${remainingCount} additional issues omitted from this summary.` : ""}`;
 };
 
 const selectedNodeIntro = (node: HarnessNode | null) =>
@@ -495,6 +527,8 @@ ${workflowSummary(harness)}
 ## Handoff Flow
 
 ${harness.edges.length > 0 ? harness.edges.map((edge) => edgeLine(harness, edge)).join("\n") : "- No handoffs defined yet."}
+
+${validationSummary(harness)}
 
 ## Workflow Steps
 

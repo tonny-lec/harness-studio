@@ -64,3 +64,17 @@ export type HarnessEdge = {
   target: string;
   handoff?: HandoffContract;
 };
+
+export type ValidationSeverity = "error" | "warning" | "info";
+
+export type ValidationScope = "harness" | "node" | "edge";
+
+export type HarnessValidationIssue = {
+  id: string;
+  severity: ValidationSeverity;
+  scope: ValidationScope;
+  targetId?: string;
+  title: string;
+  message: string;
+  recommendation?: string;
+};
