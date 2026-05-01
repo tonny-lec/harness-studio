@@ -76,11 +76,16 @@ export function ContextPackEditor({ harnessId, contextPack, onChange }: ContextP
         onClick={() => setIsOpen((current) => !current)}
         aria-expanded={isOpen}
       >
-        {isOpen ? <ChevronDown size={18} aria-hidden="true" /> : <ChevronRight size={18} aria-hidden="true" />}
+        {isOpen ? (
+          <ChevronDown size={18} aria-hidden="true" />
+        ) : (
+          <ChevronRight size={18} aria-hidden="true" />
+        )}
         <span>Context Pack</span>
       </button>
       <p className="helper-text">
-        Reusable project and domain knowledge. Keep task-specific instructions in workflow step Prompt Briefs.
+        Reusable project and domain knowledge. Keep task-specific instructions in workflow step
+        Prompt Briefs.
       </p>
       {isOpen && (
         <div className="context-pack-grid">

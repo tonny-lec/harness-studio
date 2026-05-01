@@ -1,4 +1,11 @@
-import type { Harness, HarnessEdge, HarnessNode, HarnessNodeType, PromptBrief, StepContract } from "../types/harness";
+import type {
+  Harness,
+  HarnessEdge,
+  HarnessNode,
+  HarnessNodeType,
+  PromptBrief,
+  StepContract,
+} from "../types/harness";
 import { createEmptyPromptBrief } from "./promptBrief";
 
 export type ExportFormat = "agents" | "investigation" | "implementation" | "review" | "blueprint";
@@ -26,7 +33,9 @@ const nodeSummary = (nodes: HarnessNode[], fallback: string) =>
   nodes.length > 0 ? nodes.map(nodeLine).join("\n") : `- ${fallback}`;
 
 const workflowSummary = (harness: Harness) =>
-  harness.nodes.length > 0 ? harness.nodes.map(nodeLine).join("\n") : "- No workflow steps captured yet.";
+  harness.nodes.length > 0
+    ? harness.nodes.map(nodeLine).join("\n")
+    : "- No workflow steps captured yet.";
 
 const connectionSummary = (harness: Harness) => {
   const connections = harness.edges
@@ -40,17 +49,22 @@ const connectionSummary = (harness: Harness) => {
   return connections.length > 0 ? connections.join("\n") : "- No required workflow order captured.";
 };
 
-const brief = (node: HarnessNode | null): PromptBrief => node?.promptBrief ?? createEmptyPromptBrief();
+const brief = (node: HarnessNode | null): PromptBrief =>
+  node?.promptBrief ?? createEmptyPromptBrief();
 
 const validationList = (harness: Harness, node: HarnessNode | null) =>
   list(
-    brief(node).validation.length > 0 ? brief(node).validation : harness.contextPack.validationCommands,
+    brief(node).validation.length > 0
+      ? brief(node).validation
+      : harness.contextPack.validationCommands,
     "Run the smallest relevant build, test, typecheck, lint, or manual check.",
   );
 
 const constraintsList = (harness: Harness, node: HarnessNode | null, fallback: string) =>
   list(
-    brief(node).constraints.length > 0 ? brief(node).constraints : harness.contextPack.reusableConstraints,
+    brief(node).constraints.length > 0
+      ? brief(node).constraints
+      : harness.contextPack.reusableConstraints,
     fallback,
   );
 
@@ -198,7 +212,10 @@ ${workflowSummary(harness)}
 `;
 }
 
-export function exportInvestigationPrompt(harness: Harness, selectedNode: HarnessNode | null): string {
+export function exportInvestigationPrompt(
+  harness: Harness,
+  selectedNode: HarnessNode | null,
+): string {
   if (!selectedNode) {
     return noSelectedNodeMarkdown(harness, "Investigation Prompt");
   }
@@ -263,13 +280,17 @@ ${stepContractSection(selectedNode.stepContract)}
 
 # Output
 
-${outputList(selectedNode, [
-  "Relevant files and flows inspected",
-  "Confirmed facts",
-  "Assumptions or unknowns",
-  "Recommended implementation approach",
-  "Risks and validation plan",
-], "Summarize the investigation findings, risks, and recommended implementation path.")}
+${outputList(
+  selectedNode,
+  [
+    "Relevant files and flows inspected",
+    "Confirmed facts",
+    "Assumptions or unknowns",
+    "Recommended implementation approach",
+    "Risks and validation plan",
+  ],
+  "Summarize the investigation findings, risks, and recommended implementation path.",
+)}
 
 # Stop Rules
 
@@ -280,7 +301,10 @@ ${stopRulesList(selectedNode, [
 `;
 }
 
-export function exportImplementationPrompt(harness: Harness, selectedNode: HarnessNode | null): string {
+export function exportImplementationPrompt(
+  harness: Harness,
+  selectedNode: HarnessNode | null,
+): string {
   if (!selectedNode) {
     return noSelectedNodeMarkdown(harness, "Implementation Prompt");
   }
@@ -348,11 +372,15 @@ If validation cannot run, explain why and give the next best check performed.
 
 # Output
 
-${outputList(selectedNode, [
-  "What changed",
-  "Validation commands and results",
-  "Any assumptions, limitations, or follow-up risks",
-], "Summarize changed behavior, validation, and remaining risk.")}
+${outputList(
+  selectedNode,
+  [
+    "What changed",
+    "Validation commands and results",
+    "Any assumptions, limitations, or follow-up risks",
+  ],
+  "Summarize changed behavior, validation, and remaining risk.",
+)}
 
 # Stop Rules
 
@@ -422,12 +450,16 @@ ${stepContractSection(selectedNode.stepContract)}
 
 # Output
 
-${outputList(selectedNode, [
-  "Findings first, ordered by severity",
-  "Include concrete file, line, component, command, or behavior references",
-  "If there are no blocking findings, say so clearly and list residual risks",
-  "Prefer no more than 5 high-signal findings unless the change is large",
-], "Report high-signal review findings and clearly separate confirmed defects from risks.")}
+${outputList(
+  selectedNode,
+  [
+    "Findings first, ordered by severity",
+    "Include concrete file, line, component, command, or behavior references",
+    "If there are no blocking findings, say so clearly and list residual risks",
+    "Prefer no more than 5 high-signal findings unless the change is large",
+  ],
+  "Report high-signal review findings and clearly separate confirmed defects from risks.",
+)}
 
 # Stop Rules
 

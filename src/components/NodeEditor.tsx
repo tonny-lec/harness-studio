@@ -7,7 +7,9 @@ type NodeEditorProps = {
   onDelete: (nodeId: string) => void;
 };
 
-const stopEditorKeyboardPropagation = (event: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+const stopEditorKeyboardPropagation = (
+  event: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>,
+) => {
   event.stopPropagation();
 };
 

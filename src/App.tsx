@@ -32,8 +32,7 @@ export default function App() {
   } = useHarnessStore();
 
   const selectedHarness = harnesses.find((harness) => harness.id === selectedHarnessId) ?? null;
-  const selectedNode =
-    selectedHarness?.nodes.find((node) => node.id === selectedNodeId) ?? null;
+  const selectedNode = selectedHarness?.nodes.find((node) => node.id === selectedNodeId) ?? null;
 
   if (!selectedHarness) {
     return (
@@ -49,7 +48,12 @@ export default function App() {
   return (
     <main className="studio-screen">
       <header className="studio-header">
-        <button className="ghost-button" type="button" onClick={returnToList} aria-label="Back to list">
+        <button
+          className="ghost-button"
+          type="button"
+          onClick={returnToList}
+          aria-label="Back to list"
+        >
           <ArrowLeft size={18} aria-hidden="true" />
           Harnesses
         </button>
@@ -79,11 +83,7 @@ export default function App() {
           />
           <ExportPreview harness={selectedHarness} selectedNode={selectedNode} />
         </section>
-        <NodeEditor
-          node={selectedNode}
-          onChange={updateNode}
-          onDelete={deleteNode}
-        />
+        <NodeEditor node={selectedNode} onChange={updateNode} onDelete={deleteNode} />
       </div>
     </main>
   );

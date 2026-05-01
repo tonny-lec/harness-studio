@@ -7,7 +7,8 @@ export const sampleHarnesses: Harness[] = [
   {
     id: "starter-coding-agent",
     name: "Starter Coding Agent Harness",
-    description: "A simple coding workflow that turns a task into reviewed implementation guidance.",
+    description:
+      "A simple coding workflow that turns a task into reviewed implementation guidance.",
     contextPack: {
       ...createEmptyContextPack(),
       projectFacts: [
@@ -45,7 +46,10 @@ export const sampleHarnesses: Harness[] = [
           ...createEmptyStepContract(),
           requiredInputs: ["User request", "Repository context"],
           producedArtifacts: ["Scoped task summary", "Acceptance notes"],
-          qualityGates: ["Do not invent backend requirements", "Prefer existing project conventions"],
+          qualityGates: [
+            "Do not invent backend requirements",
+            "Prefer existing project conventions",
+          ],
         },
         inputs: ["User request", "Repository context"],
         outputs: ["Scoped task summary", "Acceptance notes"],
@@ -136,7 +140,10 @@ export const sampleHarnesses: Harness[] = [
           ...createEmptyPromptBrief(),
           goal: "Review changes for correctness, regression risk, architecture fit, and missing verification.",
           successCriteria: ["Findings are actionable", "Confirmed issues are separated from risks"],
-          output: ["Findings first, ordered by severity", "Mention residual risk if no blockers are found"],
+          output: [
+            "Findings first, ordered by severity",
+            "Mention residual risk if no blockers are found",
+          ],
         },
         stepContract: {
           ...createEmptyStepContract(),

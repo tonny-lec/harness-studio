@@ -26,8 +26,14 @@ const hasStepContractContent = (stepContract: StepContract) =>
   stepContract.handoffNotes.length > 0 ||
   stepContract.failureModes.length > 0;
 
-export const normalizeStepContract = (value: unknown, legacyNode?: Pick<HarnessNode, "inputs" | "outputs" | "constraints">): StepContract => {
-  const source = value && typeof value === "object" ? (value as Partial<Record<keyof StepContract, unknown>>) : {};
+export const normalizeStepContract = (
+  value: unknown,
+  legacyNode?: Pick<HarnessNode, "inputs" | "outputs" | "constraints">,
+): StepContract => {
+  const source =
+    value && typeof value === "object"
+      ? (value as Partial<Record<keyof StepContract, unknown>>)
+      : {};
   const normalized = {
     requiredInputs: isStringArray(source.requiredInputs) ? source.requiredInputs : [],
     producedArtifacts: isStringArray(source.producedArtifacts) ? source.producedArtifacts : [],
@@ -56,7 +62,9 @@ export const normalizeHandoffContract = (value: unknown): HandoffContract | unde
 
   const source = value as Partial<Record<keyof HandoffContract, unknown>>;
   return {
-    transferredArtifacts: isStringArray(source.transferredArtifacts) ? source.transferredArtifacts : [],
+    transferredArtifacts: isStringArray(source.transferredArtifacts)
+      ? source.transferredArtifacts
+      : [],
     conditions: isStringArray(source.conditions) ? source.conditions : [],
     notes: typeof source.notes === "string" ? source.notes : "",
   };

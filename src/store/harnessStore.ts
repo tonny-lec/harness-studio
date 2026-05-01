@@ -12,7 +12,11 @@ import type {
 import { sampleHarnesses } from "../data/sampleHarnesses";
 import { createEmptyContextPack, normalizeContextPack } from "../utils/contextPack";
 import { createEmptyPromptBrief, normalizePromptBrief } from "../utils/promptBrief";
-import { createEmptyStepContract, normalizeEdgeHandoff, normalizeStepContract } from "../utils/stepContract";
+import {
+  createEmptyStepContract,
+  normalizeEdgeHandoff,
+  normalizeStepContract,
+} from "../utils/stepContract";
 
 const STORAGE_KEY = "harness-studio-state";
 
@@ -50,7 +54,9 @@ const cloneHarnesses = (harnesses: Harness[]) =>
       ...baseHarness,
       contextPack: normalizeContextPack(harness.contextPack),
       nodes: harness.nodes.map((node) => {
-        const nodeBrief = normalizePromptBrief((node as unknown as { promptBrief?: unknown }).promptBrief);
+        const nodeBrief = normalizePromptBrief(
+          (node as unknown as { promptBrief?: unknown }).promptBrief,
+        );
         const shouldApplyLegacyBrief =
           !didApplyLegacyBrief &&
           node.type === "task" &&
@@ -65,7 +71,10 @@ const cloneHarnesses = (harnesses: Harness[]) =>
           ...node,
           notes: node.notes ?? "",
           promptBrief: shouldApplyLegacyBrief ? legacyBrief : nodeBrief,
-          stepContract: normalizeStepContract((node as unknown as { stepContract?: unknown }).stepContract, node),
+          stepContract: normalizeStepContract(
+            (node as unknown as { stepContract?: unknown }).stepContract,
+            node,
+          ),
           inputs: [...node.inputs],
           outputs: [...node.outputs],
           constraints: [...node.constraints],
@@ -119,7 +128,11 @@ const isHarnessEdge = (value: unknown): value is HarnessEdge => {
   }
 
   const edge = value as Record<string, unknown>;
-  return typeof edge.id === "string" && typeof edge.source === "string" && typeof edge.target === "string";
+  return (
+    typeof edge.id === "string" &&
+    typeof edge.source === "string" &&
+    typeof edge.target === "string"
+  );
 };
 
 const isHarness = (value: unknown): value is Harness => {
@@ -147,9 +160,10 @@ const getSafePersistedState = (persistedState: unknown): PersistedHarnessState =
   }
 
   const state = persistedState as Record<string, unknown>;
-  const harnesses = Array.isArray(state.harnesses) && state.harnesses.every(isHarness)
-    ? cloneHarnesses(state.harnesses)
-    : cloneHarnesses(sampleHarnesses);
+  const harnesses =
+    Array.isArray(state.harnesses) && state.harnesses.every(isHarness)
+      ? cloneHarnesses(state.harnesses)
+      : cloneHarnesses(sampleHarnesses);
   const selectedHarnessId =
     typeof state.selectedHarnessId === "string" &&
     harnesses.some((harness) => harness.id === state.selectedHarnessId)

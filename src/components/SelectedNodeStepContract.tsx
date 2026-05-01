@@ -37,10 +37,14 @@ const fieldLabels: Record<keyof StepContract, string> = {
 const fieldPlaceholders: Record<keyof StepContract, string> = {
   requiredInputs: "Example:\n- User task\n- Relevant source files\n- Context Pack notes",
   producedArtifacts: "Example:\n- Investigation summary\n- Code changes\n- Review findings",
-  allowedActions: "Example:\n- Inspect repository files\n- Edit focused frontend code\n- Run npm run build",
-  qualityGates: "Example:\n- Build passes\n- Existing behavior is preserved\n- No backend APIs added",
-  handoffNotes: "Example:\n- Pass changed files and validation results to review\n- Include unresolved risks",
-  failureModes: "Example:\n- Missing repository context\n- Validation command unavailable\n- Ambiguous product decision",
+  allowedActions:
+    "Example:\n- Inspect repository files\n- Edit focused frontend code\n- Run npm run build",
+  qualityGates:
+    "Example:\n- Build passes\n- Existing behavior is preserved\n- No backend APIs added",
+  handoffNotes:
+    "Example:\n- Pass changed files and validation results to review\n- Include unresolved risks",
+  failureModes:
+    "Example:\n- Missing repository context\n- Validation command unavailable\n- Ambiguous product decision",
 };
 
 export function SelectedNodeStepContract({ node, onChange }: SelectedNodeStepContractProps) {

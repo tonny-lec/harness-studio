@@ -55,7 +55,9 @@ export function ExportPreview({ harness, selectedNode }: ExportPreviewProps) {
             Copy
           </button>
           {copyStatus !== "idle" && (
-            <span className={copyStatus === "copied" ? "copy-status" : "copy-status copy-status-error"}>
+            <span
+              className={copyStatus === "copied" ? "copy-status" : "copy-status copy-status-error"}
+            >
               {copyStatus === "copied" ? "Copied" : "Copy failed"}
             </span>
           )}
