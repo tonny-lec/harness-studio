@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import {
   addEdge,
   applyEdgeChanges,
@@ -18,6 +18,7 @@ import {
   type OnNodeDrag,
 } from "@xyflow/react";
 import type { Harness, HarnessEdge, HarnessNode } from "../types/harness";
+import { createEmptyHandoffContract } from "../utils/stepContract";
 import { TaskNode } from "./nodes/TaskNode";
 import { ContextNode } from "./nodes/ContextNode";
 import { AgentNode } from "./nodes/AgentNode";
@@ -35,7 +36,9 @@ const nodeTypes: NodeTypes = {
 type HarnessCanvasProps = {
   harness: Harness;
   selectedNodeId: string | null;
+  selectedEdgeId: string | null;
   onSelectNode: (nodeId: string | null) => void;
+  onSelectEdge: (edgeId: string | null) => void;
   onMoveNode: (nodeId: string, position: HarnessNode["position"]) => void;
   onEdgesChange: (edges: HarnessEdge[]) => void;
 };
@@ -43,12 +46,12 @@ type HarnessCanvasProps = {
 export function HarnessCanvas({
   harness,
   selectedNodeId,
+  selectedEdgeId,
   onSelectNode,
+  onSelectEdge,
   onMoveNode,
   onEdgesChange,
 }: HarnessCanvasProps) {
-  const [selectedEdgeIds, setSelectedEdgeIds] = useState<Set<string>>(new Set());
-
   const nodes = useMemo<Node[]>(
     () =>
       harness.nodes.map((node) => ({
@@ -68,20 +71,10 @@ export function HarnessCanvas({
         source: edge.source,
         target: edge.target,
         animated: true,
-        selected: selectedEdgeIds.has(edge.id),
+        selected: edge.id === selectedEdgeId,
       })),
-    [harness.edges, selectedEdgeIds],
+    [harness.edges, selectedEdgeId],
   );
-
-  useEffect(() => {
-    setSelectedEdgeIds((currentIds) => {
-      const nextIds = new Set(
-        [...currentIds].filter((edgeId) => harness.edges.some((edge) => edge.id === edgeId)),
-      );
-
-      return nextIds.size === currentIds.size ? currentIds : nextIds;
-    });
-  }, [harness.edges]);
 
   const toHarnessEdges = (reactFlowEdges: Edge[]): HarnessEdge[] =>
     reactFlowEdges.map((edge) => {
@@ -91,7 +84,7 @@ export function HarnessCanvas({
         id: edge.id,
         source: edge.source,
         target: edge.target,
-        handoff: existingEdge?.handoff,
+        handoff: existingEdge?.handoff ?? createEmptyHandoffContract(),
       };
     });
 
@@ -107,19 +100,8 @@ export function HarnessCanvas({
     const selectionChanges = changes.filter((change) => change.type === "select");
 
     if (selectionChanges.length > 0) {
-      setSelectedEdgeIds((currentIds) => {
-        const nextIds = new Set(currentIds);
-
-        selectionChanges.forEach((change) => {
-          if (change.selected) {
-            nextIds.add(change.id);
-          } else {
-            nextIds.delete(change.id);
-          }
-        });
-
-        return nextIds;
-      });
+      const selectedChange = selectionChanges.find((change) => change.selected);
+      onSelectEdge(selectedChange?.id ?? null);
     }
 
     if (changes.some((change) => change.type !== "select")) {
@@ -151,13 +133,12 @@ export function HarnessCanvas({
         onEdgesChange={handleEdgesChange}
         onNodesChange={handleNodesChange}
         onEdgeClick={(_, edge) => {
-          onSelectNode(null);
-          setSelectedEdgeIds(new Set([edge.id]));
+          onSelectEdge(edge.id);
         }}
         onNodeClick={(_, node) => onSelectNode(node.id)}
         onPaneClick={() => {
           onSelectNode(null);
-          setSelectedEdgeIds(new Set());
+          onSelectEdge(null);
         }}
         onNodeDragStop={handleNodeDragStop}
         deleteKeyCode={["Backspace", "Delete"]}

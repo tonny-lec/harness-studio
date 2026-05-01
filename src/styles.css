@@ -26,6 +26,7 @@ body {
 
 button,
 input,
+select,
 textarea {
   font: inherit;
 }
@@ -368,6 +369,7 @@ h2 {
 }
 
 .side-panel input,
+.side-panel select,
 .side-panel textarea {
   width: 100%;
   border: 1px solid #cad3df;

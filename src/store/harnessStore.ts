@@ -6,6 +6,7 @@ import type {
   HarnessEdge,
   HarnessNode,
   HarnessNodeType,
+  HandoffContract,
   PromptBrief,
   StepContract,
 } from "../types/harness";
@@ -13,7 +14,9 @@ import { sampleHarnesses } from "../data/sampleHarnesses";
 import { createEmptyContextPack, normalizeContextPack } from "../utils/contextPack";
 import { createEmptyPromptBrief, normalizePromptBrief } from "../utils/promptBrief";
 import {
+  createEmptyHandoffContract,
   createEmptyStepContract,
+  normalizeHandoffContract,
   normalizeEdgeHandoff,
   normalizeStepContract,
 } from "../utils/stepContract";
@@ -24,13 +27,16 @@ type HarnessStore = {
   harnesses: Harness[];
   selectedHarnessId: string | null;
   selectedNodeId: string | null;
+  selectedEdgeId: string | null;
   selectHarness: (harnessId: string) => void;
   returnToList: () => void;
   createHarness: () => string;
   selectNode: (nodeId: string | null) => void;
+  selectEdge: (edgeId: string | null) => void;
   updateHarness: (updates: Pick<Partial<Harness>, "name" | "description">) => void;
   updatePromptBrief: (nodeId: string, updates: Partial<PromptBrief>) => void;
   updateStepContract: (nodeId: string, updates: Partial<StepContract>) => void;
+  updateHandoffContract: (edgeId: string, updates: Partial<HandoffContract>) => void;
   updateContextPack: (updates: Partial<ContextPack>) => void;
   addNode: (nodeType: HarnessNodeType) => string | null;
   deleteNode: (nodeId: string) => void;
@@ -255,18 +261,24 @@ export const useHarnessStore = create<HarnessStore>()(
       harnesses: cloneHarnesses(sampleHarnesses),
       selectedHarnessId: null,
       selectedNodeId: null,
-      selectHarness: (harnessId) => set({ selectedHarnessId: harnessId, selectedNodeId: null }),
-      returnToList: () => set({ selectedHarnessId: null, selectedNodeId: null }),
+      selectedEdgeId: null,
+      selectHarness: (harnessId) =>
+        set({ selectedHarnessId: harnessId, selectedNodeId: null, selectedEdgeId: null }),
+      returnToList: () =>
+        set({ selectedHarnessId: null, selectedNodeId: null, selectedEdgeId: null }),
       createHarness: () => {
         const harness = createStarterHarness();
         set((state) => ({
           harnesses: [harness, ...state.harnesses],
           selectedHarnessId: harness.id,
           selectedNodeId: null,
+          selectedEdgeId: null,
         }));
         return harness.id;
       },
-      selectNode: (nodeId) => set({ selectedNodeId: nodeId }),
+      selectNode: (nodeId) => set({ selectedNodeId: nodeId, selectedEdgeId: null }),
+      selectEdge: (edgeId) =>
+        set(edgeId ? { selectedEdgeId: edgeId, selectedNodeId: null } : { selectedEdgeId: null }),
       updateHarness: (updates) =>
         set((state) => ({
           harnesses: state.harnesses.map((harness) =>
@@ -315,6 +327,28 @@ export const useHarnessStore = create<HarnessStore>()(
               : harness,
           ),
         })),
+      updateHandoffContract: (edgeId, updates) =>
+        set((state) => ({
+          harnesses: state.harnesses.map((harness) =>
+            harness.id === state.selectedHarnessId
+              ? {
+                  ...harness,
+                  edges: harness.edges.map((edge) =>
+                    edge.id === edgeId
+                      ? {
+                          ...edge,
+                          handoff: {
+                            ...(normalizeHandoffContract(edge.handoff) ??
+                              createEmptyHandoffContract()),
+                            ...updates,
+                          },
+                        }
+                      : edge,
+                  ),
+                }
+              : harness,
+          ),
+        })),
       updateContextPack: (updates) =>
         set((state) => ({
           harnesses: state.harnesses.map((harness) =>
@@ -347,6 +381,7 @@ export const useHarnessStore = create<HarnessStore>()(
             };
           }),
           selectedNodeId: nextNodeId,
+          selectedEdgeId: null,
         }));
 
         return nextNodeId;
@@ -365,6 +400,18 @@ export const useHarnessStore = create<HarnessStore>()(
                 },
           ),
           selectedNodeId: state.selectedNodeId === nodeId ? null : state.selectedNodeId,
+          selectedEdgeId:
+            state.selectedEdgeId &&
+            state.harnesses
+              .find((harness) => harness.id === state.selectedHarnessId)
+              ?.edges.some(
+                (edge) =>
+                  edge.id === state.selectedEdgeId &&
+                  edge.source !== nodeId &&
+                  edge.target !== nodeId,
+              )
+              ? state.selectedEdgeId
+              : null,
         })),
       updateNode: (nodeId, updates) =>
         set((state) => ({
@@ -395,14 +442,36 @@ export const useHarnessStore = create<HarnessStore>()(
       setEdges: (edges) =>
         set((state) => ({
           harnesses: state.harnesses.map((harness) =>
-            harness.id === state.selectedHarnessId ? { ...harness, edges } : harness,
+            harness.id === state.selectedHarnessId
+              ? {
+                  ...harness,
+                  edges: edges.map((edge) => {
+                    const existingEdge = harness.edges.find(
+                      (harnessEdge) => harnessEdge.id === edge.id,
+                    );
+
+                    return {
+                      ...edge,
+                      handoff:
+                        edge.handoff ??
+                        existingEdge?.handoff ??
+                        (edge.source && edge.target ? createEmptyHandoffContract() : undefined),
+                    };
+                  }),
+                }
+              : harness,
           ),
+          selectedEdgeId:
+            state.selectedEdgeId && edges.some((edge) => edge.id === state.selectedEdgeId)
+              ? state.selectedEdgeId
+              : null,
         })),
       resetSampleData: () => {
         set({
           harnesses: cloneHarnesses(sampleHarnesses),
           selectedHarnessId: sampleHarnesses[0]?.id ?? null,
           selectedNodeId: null,
+          selectedEdgeId: null,
         });
         window.localStorage.removeItem(STORAGE_KEY);
       },
@@ -419,6 +488,7 @@ export const useHarnessStore = create<HarnessStore>()(
         ...currentState,
         ...getSafePersistedState(persistedState),
         selectedNodeId: null,
+        selectedEdgeId: null,
       }),
       onRehydrateStorage: () => (_state, error) => {
         if (error) {

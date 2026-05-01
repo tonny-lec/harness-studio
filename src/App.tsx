@@ -7,6 +7,7 @@ import { HarnessMetadataEditor } from "./components/HarnessMetadataEditor";
 import { HarnessValidationPanel } from "./components/HarnessValidationPanel";
 import { NodeAddToolbar } from "./components/NodeAddToolbar";
 import { NodeEditor } from "./components/NodeEditor";
+import { SelectedConnectionEditor } from "./components/SelectedConnectionEditor";
 import { SelectedNodePromptBrief } from "./components/SelectedNodePromptBrief";
 import { SelectedNodeStepContract } from "./components/SelectedNodeStepContract";
 import { useHarnessStore } from "./store/harnessStore";
@@ -17,13 +18,16 @@ export default function App() {
     harnesses,
     selectedHarnessId,
     selectedNodeId,
+    selectedEdgeId,
     selectHarness,
     returnToList,
     createHarness,
     selectNode,
+    selectEdge,
     updateHarness,
     updatePromptBrief,
     updateStepContract,
+    updateHandoffContract,
     updateContextPack,
     addNode,
     deleteNode,
@@ -35,6 +39,11 @@ export default function App() {
 
   const selectedHarness = harnesses.find((harness) => harness.id === selectedHarnessId) ?? null;
   const selectedNode = selectedHarness?.nodes.find((node) => node.id === selectedNodeId) ?? null;
+  const selectedEdge = selectedHarness?.edges.find((edge) => edge.id === selectedEdgeId) ?? null;
+  const selectedEdgeSource =
+    selectedHarness?.nodes.find((node) => node.id === selectedEdge?.source) ?? null;
+  const selectedEdgeTarget =
+    selectedHarness?.nodes.find((node) => node.id === selectedEdge?.target) ?? null;
   const validationIssues = selectedHarness ? validateHarness(selectedHarness) : [];
 
   if (!selectedHarness) {
@@ -80,14 +89,25 @@ export default function App() {
           <HarnessCanvas
             harness={selectedHarness}
             selectedNodeId={selectedNodeId}
+            selectedEdgeId={selectedEdgeId}
             onSelectNode={selectNode}
+            onSelectEdge={selectEdge}
             onMoveNode={updateNodePosition}
             onEdgesChange={setEdges}
           />
           <HarnessValidationPanel issues={validationIssues} onSelectNode={selectNode} />
           <ExportPreview harness={selectedHarness} selectedNode={selectedNode} />
         </section>
-        <NodeEditor node={selectedNode} onChange={updateNode} onDelete={deleteNode} />
+        {selectedEdge ? (
+          <SelectedConnectionEditor
+            edge={selectedEdge}
+            sourceNode={selectedEdgeSource}
+            targetNode={selectedEdgeTarget}
+            onChange={updateHandoffContract}
+          />
+        ) : (
+          <NodeEditor node={selectedNode} onChange={updateNode} onDelete={deleteNode} />
+        )}
       </div>
     </main>
   );

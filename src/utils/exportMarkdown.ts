@@ -134,18 +134,49 @@ const edgeLine = (harness: Harness, edge: HarnessEdge) => {
   const base = `${source?.name ?? edge.source} -> ${target?.name ?? edge.target}`;
 
   if (!edge.handoff) {
-    return `- ${base}`;
+    return `- ${base} (type: Normal)`;
   }
 
   const details = [
+    `type: ${edge.handoff.kind}`,
     edge.handoff.transferredArtifacts.length > 0
       ? `artifacts: ${edge.handoff.transferredArtifacts.join(", ")}`
       : "",
     edge.handoff.conditions.length > 0 ? `conditions: ${edge.handoff.conditions.join(", ")}` : "",
+    edge.handoff.kind === "loop" && edge.handoff.maxIterations
+      ? `max iterations: ${edge.handoff.maxIterations}`
+      : "",
+    edge.handoff.kind === "loop" && edge.handoff.stopConditions.length > 0
+      ? `stop: ${edge.handoff.stopConditions.join(", ")}`
+      : "",
+    edge.handoff.failureBehavior ? `failure: ${edge.handoff.failureBehavior}` : "",
     edge.handoff.notes ? `notes: ${edge.handoff.notes}` : "",
   ].filter(Boolean);
 
   return details.length > 0 ? `- ${base} (${details.join("; ")})` : `- ${base}`;
+};
+
+const edgeBlueprintSection = (harness: Harness, edge: HarnessEdge) => {
+  const source = harness.nodes.find((node) => node.id === edge.source);
+  const target = harness.nodes.find((node) => node.id === edge.target);
+  const handoff = edge.handoff;
+
+  if (!handoff) {
+    return `### ${source?.name ?? edge.source} -> ${target?.name ?? edge.target}
+
+- Type: Normal
+- Handoff details are not captured yet.`;
+  }
+
+  return `### ${source?.name ?? edge.source} -> ${target?.name ?? edge.target}
+
+- Type: ${handoff.kind === "loop" ? "Loop" : handoff.kind === "conditional" ? "Conditional" : "Normal"}
+${handoff.transferredArtifacts.length > 0 ? `\nTransferred artifacts:\n${list(handoff.transferredArtifacts)}` : ""}
+${handoff.conditions.length > 0 ? `\nConditions:\n${list(handoff.conditions)}` : ""}
+${handoff.kind === "loop" && handoff.maxIterations ? `\n- Max iterations: ${handoff.maxIterations}` : ""}
+${handoff.kind === "loop" && handoff.stopConditions.length > 0 ? `\nStop conditions:\n${list(handoff.stopConditions)}` : ""}
+${handoff.failureBehavior ? `\nFailure behavior:\n- ${handoff.failureBehavior}` : ""}
+${handoff.notes ? `\nNotes:\n- ${handoff.notes}` : ""}`;
 };
 
 const validationCounts = (issues: HarnessValidationIssue[]) => ({
@@ -527,6 +558,10 @@ ${workflowSummary(harness)}
 ## Handoff Flow
 
 ${harness.edges.length > 0 ? harness.edges.map((edge) => edgeLine(harness, edge)).join("\n") : "- No handoffs defined yet."}
+
+## Connection Design
+
+${harness.edges.length > 0 ? harness.edges.map((edge) => edgeBlueprintSection(harness, edge)).join("\n\n") : "- No connections defined yet."}
 
 ${validationSummary(harness)}
 

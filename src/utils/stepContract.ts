@@ -10,9 +10,11 @@ export const createEmptyStepContract = (): StepContract => ({
 });
 
 export const createEmptyHandoffContract = (): HandoffContract => ({
+  kind: "normal",
   transferredArtifacts: [],
   conditions: [],
   notes: "",
+  stopConditions: [],
 });
 
 const isStringArray = (value: unknown): value is string[] =>
@@ -61,12 +63,25 @@ export const normalizeHandoffContract = (value: unknown): HandoffContract | unde
   }
 
   const source = value as Partial<Record<keyof HandoffContract, unknown>>;
+  const kind =
+    source.kind === "normal" || source.kind === "conditional" || source.kind === "loop"
+      ? source.kind
+      : "normal";
+  const maxIterations =
+    typeof source.maxIterations === "number" && Number.isFinite(source.maxIterations)
+      ? source.maxIterations
+      : undefined;
+
   return {
+    kind,
     transferredArtifacts: isStringArray(source.transferredArtifacts)
       ? source.transferredArtifacts
       : [],
     conditions: isStringArray(source.conditions) ? source.conditions : [],
     notes: typeof source.notes === "string" ? source.notes : "",
+    maxIterations,
+    stopConditions: isStringArray(source.stopConditions) ? source.stopConditions : [],
+    failureBehavior: typeof source.failureBehavior === "string" ? source.failureBehavior : "",
   };
 };
 

@@ -35,7 +35,9 @@ const hasHandoffContent = (handoff: HandoffContract | undefined) =>
     handoff &&
     (hasItems(handoff.transferredArtifacts) ||
       hasItems(handoff.conditions) ||
-      hasText(handoff.notes)),
+      hasItems(handoff.stopConditions) ||
+      hasText(handoff.notes) ||
+      hasText(handoff.failureBehavior)),
   );
 
 const issue = (
@@ -60,6 +62,41 @@ const normalizedSet = (items: string[]) =>
   new Set(items.filter(hasText).map((item) => item.trim().toLocaleLowerCase()));
 
 const findNode = (nodes: HarnessNode[], nodeId: string) => nodes.find((node) => node.id === nodeId);
+
+const hasValidMaxIterations = (handoff: HandoffContract) =>
+  typeof handoff.maxIterations === "number" &&
+  Number.isInteger(handoff.maxIterations) &&
+  handoff.maxIterations > 0;
+
+const returnsToUpstreamStep = (edge: HarnessEdge, edges: HarnessEdge[]) => {
+  if (edge.source === edge.target) {
+    return true;
+  }
+
+  const visited = new Set<string>();
+  const stack = [edge.target];
+
+  while (stack.length > 0) {
+    const currentNodeId = stack.pop();
+
+    if (!currentNodeId || visited.has(currentNodeId)) {
+      continue;
+    }
+
+    if (currentNodeId === edge.source) {
+      return true;
+    }
+
+    visited.add(currentNodeId);
+    edges
+      .filter(
+        (candidateEdge) => candidateEdge.id !== edge.id && candidateEdge.source === currentNodeId,
+      )
+      .forEach((candidateEdge) => stack.push(candidateEdge.target));
+  }
+
+  return false;
+};
 
 const validateNode = (node: HarnessNode): HarnessValidationIssue[] => {
   const issues: HarnessValidationIssue[] = [];
@@ -137,16 +174,21 @@ const validateNode = (node: HarnessNode): HarnessValidationIssue[] => {
   return issues;
 };
 
-const validateEdge = (edge: HarnessEdge, nodes: HarnessNode[]): HarnessValidationIssue[] => {
+const validateEdge = (
+  edge: HarnessEdge,
+  nodes: HarnessNode[],
+  edges: HarnessEdge[],
+): HarnessValidationIssue[] => {
   const issues: HarnessValidationIssue[] = [];
   const source = findNode(nodes, edge.source);
   const target = findNode(nodes, edge.target);
+  const handoff = edge.handoff;
   const sourceHasContract = source ? hasStepContractContent(source.stepContract) : false;
   const targetHasContract = target ? hasStepContractContent(target.stepContract) : false;
   const sourceName = source?.name ?? edge.source;
   const targetName = target?.name ?? edge.target;
 
-  if (!hasHandoffContent(edge.handoff)) {
+  if (!hasHandoffContent(handoff)) {
     issues.push(
       issue(
         `edge-${edge.id}-handoff`,
@@ -160,7 +202,7 @@ const validateEdge = (edge: HarnessEdge, nodes: HarnessNode[]): HarnessValidatio
     );
   }
 
-  if (edge.handoff && !hasItems(edge.handoff.transferredArtifacts)) {
+  if (handoff && !hasItems(handoff.transferredArtifacts)) {
     issues.push(
       issue(
         `edge-${edge.id}-transferred-artifacts`,
@@ -172,6 +214,64 @@ const validateEdge = (edge: HarnessEdge, nodes: HarnessNode[]): HarnessValidatio
         edge.id,
       ),
     );
+  }
+
+  if (handoff?.kind === "conditional" && !hasItems(handoff.conditions)) {
+    issues.push(
+      issue(
+        `edge-${edge.id}-conditional-conditions`,
+        "warning",
+        "edge",
+        "Conditional connection の条件が未入力です",
+        `${sourceName} -> ${targetName} はConditionalですが、この接続を使う条件が定義されていません。`,
+        "Conditionsに、この接続を選ぶ判断条件を追加してください。",
+        edge.id,
+      ),
+    );
+  }
+
+  if (handoff?.kind === "loop") {
+    if (!hasValidMaxIterations(handoff)) {
+      issues.push(
+        issue(
+          `edge-${edge.id}-loop-max-iterations`,
+          "warning",
+          "edge",
+          "Loop の最大反復回数が未設定です",
+          `${sourceName} -> ${targetName} はLoopですが、max iterationsが有効な正の整数として設定されていません。`,
+          "Max Iterationsに、ループを何回まで許容するかを設定してください。",
+          edge.id,
+        ),
+      );
+    }
+
+    if (!hasItems(handoff.stopConditions)) {
+      issues.push(
+        issue(
+          `edge-${edge.id}-loop-stop-conditions`,
+          "warning",
+          "edge",
+          "Loop の停止条件が未入力です",
+          `${sourceName} -> ${targetName} はLoopですが、いつ反復を止めるかが定義されていません。`,
+          "Stop Conditionsに、成功時・上限到達時・継続不能時の停止条件を追加してください。",
+          edge.id,
+        ),
+      );
+    }
+
+    if (returnsToUpstreamStep(edge, edges) && !hasItems(handoff.stopConditions)) {
+      issues.push(
+        issue(
+          `edge-${edge.id}-loop-return-stop-condition`,
+          "warning",
+          "edge",
+          "上流へ戻るLoopに停止条件がありません",
+          `${sourceName} -> ${targetName} は同じStepまたは上流Stepへ戻るLoopとして見えますが、停止条件がありません。`,
+          "無限ループを避けるため、Stop Conditionsを明示してください。",
+          edge.id,
+        ),
+      );
+    }
   }
 
   if (
@@ -250,7 +350,7 @@ export function validateHarness(harness: Harness): HarnessValidationIssue[] {
   });
 
   harness.edges.forEach((edge) => {
-    issues.push(...validateEdge(edge, harness.nodes));
+    issues.push(...validateEdge(edge, harness.nodes, harness.edges));
   });
 
   return issues;

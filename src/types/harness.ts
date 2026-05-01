@@ -29,10 +29,16 @@ export type StepContract = {
   failureModes: string[];
 };
 
+export type EdgeKind = "normal" | "conditional" | "loop";
+
 export type HandoffContract = {
+  kind: EdgeKind;
   transferredArtifacts: string[];
   conditions: string[];
   notes: string;
+  maxIterations?: number;
+  stopConditions: string[];
+  failureBehavior?: string;
 };
 
 export type Harness = {
