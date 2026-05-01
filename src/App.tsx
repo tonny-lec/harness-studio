@@ -5,18 +5,22 @@ import { ExportPreview } from "./components/ExportPreview";
 import { HarnessCanvas } from "./components/HarnessCanvas";
 import { HarnessList } from "./components/HarnessList";
 import { HarnessMetadataEditor } from "./components/HarnessMetadataEditor";
+import { HarnessOutline } from "./components/HarnessOutline";
 import { HarnessValidationPanel } from "./components/HarnessValidationPanel";
 import { NodeAddToolbar } from "./components/NodeAddToolbar";
 import { NodeEditor } from "./components/NodeEditor";
 import { SelectedConnectionEditor } from "./components/SelectedConnectionEditor";
 import { SelectedNodePromptBrief } from "./components/SelectedNodePromptBrief";
 import { SelectedNodeStepContract } from "./components/SelectedNodeStepContract";
-import { WorkflowLoopEditor } from "./components/WorkflowLoopEditor";
+import { WorkflowLoopInspector } from "./components/WorkflowLoopInspector";
 import { useHarnessStore } from "./store/harnessStore";
 import { validateHarness } from "./utils/validateHarness";
 
+type WorkspaceTab = "design" | "validate" | "export";
+
 export default function App() {
   const [selectedLoopId, setSelectedLoopId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<WorkspaceTab>("design");
   const {
     harnesses,
     selectedHarnessId,
@@ -64,6 +68,29 @@ export default function App() {
     );
   }
 
+  const handleSelectNode = (nodeId: string | null) => {
+    setSelectedLoopId(null);
+    selectNode(nodeId);
+  };
+
+  const handleSelectEdge = (edgeId: string | null) => {
+    setSelectedLoopId(null);
+    selectEdge(edgeId);
+  };
+
+  const handleSelectLoop = (loopId: string | null) => {
+    selectNode(null);
+    selectEdge(null);
+    setSelectedLoopId(loopId);
+  };
+
+  const handleAddLoop = () => {
+    const loopId = addWorkflowLoop();
+    if (loopId) {
+      handleSelectLoop(loopId);
+    }
+  };
+
   return (
     <main className="studio-screen">
       <header className="studio-header">
@@ -80,52 +107,110 @@ export default function App() {
           <h1>{selectedHarness.name}</h1>
           <p>{selectedHarness.description}</p>
         </div>
+        <nav className="workspace-tabs" aria-label="Workspace sections">
+          {(["design", "validate", "export"] as WorkspaceTab[]).map((tab) => (
+            <button
+              className={activeTab === tab ? "workspace-tab is-active" : "workspace-tab"}
+              type="button"
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+            >
+              {tab === "design" ? "Design" : tab === "validate" ? "Validate" : "Export"}
+            </button>
+          ))}
+        </nav>
       </header>
 
-      <div className="studio-layout">
-        <section className="canvas-column" aria-label="Harness canvas（ハーネスキャンバス）">
-          <HarnessMetadataEditor harness={selectedHarness} onChange={updateHarness} />
-          <ContextPackEditor
-            harnessId={selectedHarness.id}
-            contextPack={selectedHarness.contextPack}
-            onChange={updateContextPack}
+      {activeTab === "design" && (
+        <div className="workspace-design-layout">
+          <aside className="workspace-left-panel">
+            <HarnessMetadataEditor harness={selectedHarness} onChange={updateHarness} />
+            <ContextPackEditor
+              harnessId={selectedHarness.id}
+              contextPack={selectedHarness.contextPack}
+              onChange={updateContextPack}
+            />
+            <HarnessOutline
+              harness={selectedHarness}
+              issues={validationIssues}
+              selectedNodeId={selectedNodeId}
+              selectedEdgeId={selectedEdgeId}
+              selectedLoopId={selectedLoopId}
+              onSelectNode={handleSelectNode}
+              onSelectEdge={handleSelectEdge}
+              onSelectLoop={handleSelectLoop}
+              onAddLoop={handleAddLoop}
+              onOpenValidate={() => setActiveTab("validate")}
+              onOpenExport={() => setActiveTab("export")}
+            />
+          </aside>
+
+          <section
+            className="workspace-canvas-panel"
+            aria-label="Harness canvas（ハーネスキャンバス）"
+          >
+            <NodeAddToolbar
+              onAddNode={(nodeType) => {
+                setSelectedLoopId(null);
+                addNode(nodeType);
+              }}
+            />
+            <HarnessCanvas
+              harness={selectedHarness}
+              selectedNodeId={selectedNodeId}
+              selectedEdgeId={selectedEdgeId}
+              selectedLoop={selectedLoop}
+              onSelectNode={handleSelectNode}
+              onSelectEdge={handleSelectEdge}
+              onMoveNode={updateNodePosition}
+              onEdgesChange={setEdges}
+            />
+          </section>
+
+          {selectedEdge ? (
+            <SelectedConnectionEditor
+              edge={selectedEdge}
+              sourceNode={selectedEdgeSource}
+              targetNode={selectedEdgeTarget}
+              onChange={updateHandoffContract}
+            />
+          ) : selectedLoop ? (
+            <WorkflowLoopInspector
+              loop={selectedLoop}
+              nodes={selectedHarness.nodes}
+              onChange={updateWorkflowLoop}
+              onDelete={deleteWorkflowLoop}
+            />
+          ) : (
+            <NodeEditor node={selectedNode} onChange={updateNode} onDelete={deleteNode}>
+              {selectedNode && (
+                <>
+                  <SelectedNodePromptBrief node={selectedNode} onChange={updatePromptBrief} />
+                  <SelectedNodeStepContract node={selectedNode} onChange={updateStepContract} />
+                </>
+              )}
+            </NodeEditor>
+          )}
+        </div>
+      )}
+
+      {activeTab === "validate" && (
+        <section className="workspace-focus-panel">
+          <HarnessValidationPanel
+            issues={validationIssues}
+            onSelectNode={(nodeId) => {
+              handleSelectNode(nodeId);
+              setActiveTab("design");
+            }}
           />
-          <SelectedNodePromptBrief node={selectedNode} onChange={updatePromptBrief} />
-          <SelectedNodeStepContract node={selectedNode} onChange={updateStepContract} />
-          <NodeAddToolbar onAddNode={addNode} />
-          <HarnessCanvas
-            harness={selectedHarness}
-            selectedNodeId={selectedNodeId}
-            selectedEdgeId={selectedEdgeId}
-            selectedLoop={selectedLoop}
-            onSelectNode={selectNode}
-            onSelectEdge={selectEdge}
-            onMoveNode={updateNodePosition}
-            onEdgesChange={setEdges}
-          />
-          <WorkflowLoopEditor
-            loops={selectedHarness.loops}
-            nodes={selectedHarness.nodes}
-            selectedLoopId={selectedLoopId}
-            onSelectLoop={setSelectedLoopId}
-            onAddLoop={addWorkflowLoop}
-            onUpdateLoop={updateWorkflowLoop}
-            onDeleteLoop={deleteWorkflowLoop}
-          />
-          <HarnessValidationPanel issues={validationIssues} onSelectNode={selectNode} />
+        </section>
+      )}
+
+      {activeTab === "export" && (
+        <section className="workspace-focus-panel">
           <ExportPreview harness={selectedHarness} selectedNode={selectedNode} />
         </section>
-        {selectedEdge ? (
-          <SelectedConnectionEditor
-            edge={selectedEdge}
-            sourceNode={selectedEdgeSource}
-            targetNode={selectedEdgeTarget}
-            onChange={updateHandoffContract}
-          />
-        ) : (
-          <NodeEditor node={selectedNode} onChange={updateNode} onDelete={deleteNode} />
-        )}
-      </div>
+      )}
     </main>
   );
 }

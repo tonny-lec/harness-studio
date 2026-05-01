@@ -1,10 +1,11 @@
-import type { KeyboardEvent } from "react";
+import type { KeyboardEvent, ReactNode } from "react";
 import type { HarnessNode } from "../types/harness";
 
 type NodeEditorProps = {
   node: HarnessNode | null;
   onChange: (nodeId: string, updates: Partial<Omit<HarnessNode, "id" | "type">>) => void;
   onDelete: (nodeId: string) => void;
+  children?: ReactNode;
 };
 
 const stopEditorKeyboardPropagation = (
@@ -13,7 +14,7 @@ const stopEditorKeyboardPropagation = (
   event.stopPropagation();
 };
 
-export function NodeEditor({ node, onChange, onDelete }: NodeEditorProps) {
+export function NodeEditor({ node, onChange, onDelete, children }: NodeEditorProps) {
   if (!node) {
     return (
       <aside className="side-panel">
@@ -59,6 +60,7 @@ export function NodeEditor({ node, onChange, onDelete }: NodeEditorProps) {
           onChange={(event) => onChange(node.id, { notes: event.target.value })}
         />
       </label>
+      {children}
       <button className="danger-button" type="button" onClick={() => onDelete(node.id)}>
         Nodeを削除
       </button>
