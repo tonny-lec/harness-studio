@@ -143,13 +143,6 @@ const edgeLine = (harness: Harness, edge: HarnessEdge) => {
       ? `artifacts: ${edge.handoff.transferredArtifacts.join(", ")}`
       : "",
     edge.handoff.conditions.length > 0 ? `conditions: ${edge.handoff.conditions.join(", ")}` : "",
-    edge.handoff.kind === "loop" && edge.handoff.maxIterations
-      ? `max iterations: ${edge.handoff.maxIterations}`
-      : "",
-    edge.handoff.kind === "loop" && edge.handoff.stopConditions.length > 0
-      ? `stop: ${edge.handoff.stopConditions.join(", ")}`
-      : "",
-    edge.handoff.failureBehavior ? `failure: ${edge.handoff.failureBehavior}` : "",
     edge.handoff.notes ? `notes: ${edge.handoff.notes}` : "",
   ].filter(Boolean);
 
@@ -170,13 +163,47 @@ const edgeBlueprintSection = (harness: Harness, edge: HarnessEdge) => {
 
   return `### ${source?.name ?? edge.source} -> ${target?.name ?? edge.target}
 
-- Type: ${handoff.kind === "loop" ? "Loop" : handoff.kind === "conditional" ? "Conditional" : "Normal"}
+- Type: ${handoff.kind === "conditional" ? "Conditional" : "Normal"}
 ${handoff.transferredArtifacts.length > 0 ? `\nTransferred artifacts:\n${list(handoff.transferredArtifacts)}` : ""}
 ${handoff.conditions.length > 0 ? `\nConditions:\n${list(handoff.conditions)}` : ""}
-${handoff.kind === "loop" && handoff.maxIterations ? `\n- Max iterations: ${handoff.maxIterations}` : ""}
-${handoff.kind === "loop" && handoff.stopConditions.length > 0 ? `\nStop conditions:\n${list(handoff.stopConditions)}` : ""}
-${handoff.failureBehavior ? `\nFailure behavior:\n- ${handoff.failureBehavior}` : ""}
 ${handoff.notes ? `\nNotes:\n- ${handoff.notes}` : ""}`;
+};
+
+const nodeName = (harness: Harness, nodeId: string | undefined) =>
+  nodeId ? (harness.nodes.find((node) => node.id === nodeId)?.name ?? nodeId) : "Not specified";
+
+const workflowLoopSection = (harness: Harness) => {
+  if (harness.loops.length === 0) {
+    return "- No workflow loops defined yet.";
+  }
+
+  return harness.loops
+    .map(
+      (loop) => `### ${loop.name}
+
+Included nodes:
+${list(
+  loop.nodeIds.map((nodeId) => nodeName(harness, nodeId)),
+  "No included nodes specified.",
+)}
+
+- Entry node: ${nodeName(harness, loop.entryNodeId)}
+- Evaluator node: ${nodeName(harness, loop.evaluatorNodeId)}
+- Exit target: ${nodeName(harness, loop.exitTargetNodeId)}
+${loop.maxIterations ? `- Max iterations: ${loop.maxIterations}` : "- Max iterations: Not specified"}
+
+Continue conditions:
+${list(loop.continueConditions, "No continue conditions captured.")}
+
+Exit conditions:
+${list(loop.exitConditions, "No exit conditions captured.")}
+
+Loop artifacts:
+${list(loop.loopArtifacts, "No loop artifacts captured.")}
+${loop.escalationBehavior ? `\nEscalation behavior:\n- ${loop.escalationBehavior}` : ""}
+${loop.notes ? `\nNotes:\n- ${loop.notes}` : ""}`,
+    )
+    .join("\n\n");
 };
 
 const validationCounts = (issues: HarnessValidationIssue[]) => ({
@@ -562,6 +589,10 @@ ${harness.edges.length > 0 ? harness.edges.map((edge) => edgeLine(harness, edge)
 ## Connection Design
 
 ${harness.edges.length > 0 ? harness.edges.map((edge) => edgeBlueprintSection(harness, edge)).join("\n\n") : "- No connections defined yet."}
+
+## Workflow Loops
+
+${workflowLoopSection(harness)}
 
 ${validationSummary(harness)}
 

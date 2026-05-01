@@ -9,6 +9,7 @@ import type {
   HandoffContract,
   PromptBrief,
   StepContract,
+  WorkflowLoop,
 } from "../types/harness";
 import { sampleHarnesses } from "../data/sampleHarnesses";
 import { createEmptyContextPack, normalizeContextPack } from "../utils/contextPack";
@@ -20,6 +21,11 @@ import {
   normalizeEdgeHandoff,
   normalizeStepContract,
 } from "../utils/stepContract";
+import {
+  createEmptyWorkflowLoop,
+  migrateLegacyLoopEdge,
+  normalizeWorkflowLoop,
+} from "../utils/workflowLoop";
 
 const STORAGE_KEY = "harness-studio-state";
 
@@ -37,6 +43,9 @@ type HarnessStore = {
   updatePromptBrief: (nodeId: string, updates: Partial<PromptBrief>) => void;
   updateStepContract: (nodeId: string, updates: Partial<StepContract>) => void;
   updateHandoffContract: (edgeId: string, updates: Partial<HandoffContract>) => void;
+  addWorkflowLoop: () => string | null;
+  updateWorkflowLoop: (loopId: string, updates: Partial<WorkflowLoop>) => void;
+  deleteWorkflowLoop: (loopId: string) => void;
   updateContextPack: (updates: Partial<ContextPack>) => void;
   addNode: (nodeType: HarnessNodeType) => string | null;
   deleteNode: (nodeId: string) => void;
@@ -54,6 +63,14 @@ const cloneHarnesses = (harnesses: Harness[]) =>
       promptBrief?: unknown;
     };
     const legacyBrief = normalizePromptBrief(legacyPromptBrief);
+    const migratedLoops = harness.edges
+      .map(migrateLegacyLoopEdge)
+      .filter((loop): loop is WorkflowLoop => Boolean(loop));
+    const existingLoops = Array.isArray((harness as unknown as { loops?: unknown }).loops)
+      ? ((harness as unknown as { loops: unknown[] }).loops
+          .map(normalizeWorkflowLoop)
+          .filter((loop): loop is WorkflowLoop => Boolean(loop)) as WorkflowLoop[])
+      : [];
     let didApplyLegacyBrief = false;
 
     return {
@@ -88,6 +105,7 @@ const cloneHarnesses = (harnesses: Harness[]) =>
         };
       }),
       edges: harness.edges.map(normalizeEdgeHandoff),
+      loops: [...existingLoops, ...migratedLoops],
     };
   });
 
@@ -156,7 +174,8 @@ const isHarness = (value: unknown): value is Harness => {
     Array.isArray(harness.nodes) &&
     harness.nodes.every(isHarnessNode) &&
     Array.isArray(harness.edges) &&
-    harness.edges.every(isHarnessEdge)
+    harness.edges.every(isHarnessEdge) &&
+    (!("loops" in harness) || Array.isArray(harness.loops))
   );
 };
 
@@ -202,6 +221,7 @@ const createStarterHarness = (): Harness => {
       source: idMap.get(edge.source) ?? edge.source,
       target: idMap.get(edge.target) ?? edge.target,
     })),
+    loops: [],
   };
 };
 
@@ -349,6 +369,59 @@ export const useHarnessStore = create<HarnessStore>()(
               : harness,
           ),
         })),
+      addWorkflowLoop: () => {
+        let nextLoopId: string | null = null;
+
+        set((state) => ({
+          harnesses: state.harnesses.map((harness) => {
+            if (harness.id !== state.selectedHarnessId) {
+              return harness;
+            }
+
+            const loop = createEmptyWorkflowLoop(createId("loop"));
+            const firstNode = harness.nodes[0];
+            nextLoopId = loop.id;
+
+            return {
+              ...harness,
+              loops: [
+                ...harness.loops,
+                {
+                  ...loop,
+                  nodeIds: firstNode ? [firstNode.id] : [],
+                  entryNodeId: firstNode?.id ?? "",
+                },
+              ],
+            };
+          }),
+        }));
+
+        return nextLoopId;
+      },
+      updateWorkflowLoop: (loopId, updates) =>
+        set((state) => ({
+          harnesses: state.harnesses.map((harness) =>
+            harness.id !== state.selectedHarnessId
+              ? harness
+              : {
+                  ...harness,
+                  loops: harness.loops.map((loop) =>
+                    loop.id === loopId ? { ...loop, ...updates } : loop,
+                  ),
+                },
+          ),
+        })),
+      deleteWorkflowLoop: (loopId) =>
+        set((state) => ({
+          harnesses: state.harnesses.map((harness) =>
+            harness.id !== state.selectedHarnessId
+              ? harness
+              : {
+                  ...harness,
+                  loops: harness.loops.filter((loop) => loop.id !== loopId),
+                },
+          ),
+        })),
       updateContextPack: (updates) =>
         set((state) => ({
           harnesses: state.harnesses.map((harness) =>
@@ -397,6 +470,15 @@ export const useHarnessStore = create<HarnessStore>()(
                   edges: harness.edges.filter(
                     (edge) => edge.source !== nodeId && edge.target !== nodeId,
                   ),
+                  loops: harness.loops.map((loop) => ({
+                    ...loop,
+                    nodeIds: loop.nodeIds.filter((loopNodeId) => loopNodeId !== nodeId),
+                    entryNodeId: loop.entryNodeId === nodeId ? "" : loop.entryNodeId,
+                    evaluatorNodeId:
+                      loop.evaluatorNodeId === nodeId ? undefined : loop.evaluatorNodeId,
+                    exitTargetNodeId:
+                      loop.exitTargetNodeId === nodeId ? undefined : loop.exitTargetNodeId,
+                  })),
                 },
           ),
           selectedNodeId: state.selectedNodeId === nodeId ? null : state.selectedNodeId,

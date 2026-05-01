@@ -7,6 +7,7 @@ import type {
   HandoffContract,
   StepContract,
   ValidationSeverity,
+  WorkflowLoop,
 } from "../types/harness";
 
 const hasText = (value: string | undefined) => Boolean(value?.trim());
@@ -35,9 +36,7 @@ const hasHandoffContent = (handoff: HandoffContract | undefined) =>
     handoff &&
     (hasItems(handoff.transferredArtifacts) ||
       hasItems(handoff.conditions) ||
-      hasItems(handoff.stopConditions) ||
-      hasText(handoff.notes) ||
-      hasText(handoff.failureBehavior)),
+      hasText(handoff.notes)),
   );
 
 const issue = (
@@ -63,39 +62,21 @@ const normalizedSet = (items: string[]) =>
 
 const findNode = (nodes: HarnessNode[], nodeId: string) => nodes.find((node) => node.id === nodeId);
 
-const hasValidMaxIterations = (handoff: HandoffContract) =>
-  typeof handoff.maxIterations === "number" &&
-  Number.isInteger(handoff.maxIterations) &&
-  handoff.maxIterations > 0;
+const hasValidMaxIterations = (loop: WorkflowLoop) =>
+  typeof loop.maxIterations === "number" &&
+  Number.isInteger(loop.maxIterations) &&
+  loop.maxIterations > 0;
 
-const returnsToUpstreamStep = (edge: HarnessEdge, edges: HarnessEdge[]) => {
-  if (edge.source === edge.target) {
+const includesConnectedSequence = (loop: WorkflowLoop, edges: HarnessEdge[]) => {
+  if (loop.nodeIds.length < 2) {
     return true;
   }
 
-  const visited = new Set<string>();
-  const stack = [edge.target];
-
-  while (stack.length > 0) {
-    const currentNodeId = stack.pop();
-
-    if (!currentNodeId || visited.has(currentNodeId)) {
-      continue;
-    }
-
-    if (currentNodeId === edge.source) {
-      return true;
-    }
-
-    visited.add(currentNodeId);
-    edges
-      .filter(
-        (candidateEdge) => candidateEdge.id !== edge.id && candidateEdge.source === currentNodeId,
-      )
-      .forEach((candidateEdge) => stack.push(candidateEdge.target));
-  }
-
-  return false;
+  return loop.nodeIds
+    .slice(0, -1)
+    .every((nodeId, index) =>
+      edges.some((edge) => edge.source === nodeId && edge.target === loop.nodeIds[index + 1]),
+    );
 };
 
 const validateNode = (node: HarnessNode): HarnessValidationIssue[] => {
@@ -174,11 +155,7 @@ const validateNode = (node: HarnessNode): HarnessValidationIssue[] => {
   return issues;
 };
 
-const validateEdge = (
-  edge: HarnessEdge,
-  nodes: HarnessNode[],
-  edges: HarnessEdge[],
-): HarnessValidationIssue[] => {
+const validateEdge = (edge: HarnessEdge, nodes: HarnessNode[]): HarnessValidationIssue[] => {
   const issues: HarnessValidationIssue[] = [];
   const source = findNode(nodes, edge.source);
   const target = findNode(nodes, edge.target);
@@ -230,50 +207,6 @@ const validateEdge = (
     );
   }
 
-  if (handoff?.kind === "loop") {
-    if (!hasValidMaxIterations(handoff)) {
-      issues.push(
-        issue(
-          `edge-${edge.id}-loop-max-iterations`,
-          "warning",
-          "edge",
-          "Loop の最大反復回数が未設定です",
-          `${sourceName} -> ${targetName} はLoopですが、max iterationsが有効な正の整数として設定されていません。`,
-          "Max Iterationsに、ループを何回まで許容するかを設定してください。",
-          edge.id,
-        ),
-      );
-    }
-
-    if (!hasItems(handoff.stopConditions)) {
-      issues.push(
-        issue(
-          `edge-${edge.id}-loop-stop-conditions`,
-          "warning",
-          "edge",
-          "Loop の停止条件が未入力です",
-          `${sourceName} -> ${targetName} はLoopですが、いつ反復を止めるかが定義されていません。`,
-          "Stop Conditionsに、成功時・上限到達時・継続不能時の停止条件を追加してください。",
-          edge.id,
-        ),
-      );
-    }
-
-    if (returnsToUpstreamStep(edge, edges) && !hasItems(handoff.stopConditions)) {
-      issues.push(
-        issue(
-          `edge-${edge.id}-loop-return-stop-condition`,
-          "warning",
-          "edge",
-          "上流へ戻るLoopに停止条件がありません",
-          `${sourceName} -> ${targetName} は同じStepまたは上流Stepへ戻るLoopとして見えますが、停止条件がありません。`,
-          "無限ループを避けるため、Stop Conditionsを明示してください。",
-          edge.id,
-        ),
-      );
-    }
-  }
-
   if (
     source &&
     target &&
@@ -298,6 +231,143 @@ const validateEdge = (
         ),
       );
     }
+  }
+
+  return issues;
+};
+
+const validateLoop = (
+  loop: WorkflowLoop,
+  nodes: HarnessNode[],
+  edges: HarnessEdge[],
+): HarnessValidationIssue[] => {
+  const issues: HarnessValidationIssue[] = [];
+  const nodeIds = new Set(nodes.map((node) => node.id));
+
+  if (loop.nodeIds.length === 0) {
+    issues.push(
+      issue(
+        `loop-${loop.id}-no-nodes`,
+        "warning",
+        "loop",
+        "Workflow Loop にNodeが含まれていません",
+        `${loop.name} は反復対象のWorkflow Stepを持っていません。`,
+        "Loopに含めるNodeを1つ以上選択してください。",
+        loop.id,
+      ),
+    );
+  }
+
+  if (!loop.entryNodeId || !nodeIds.has(loop.entryNodeId)) {
+    issues.push(
+      issue(
+        `loop-${loop.id}-entry-node`,
+        "warning",
+        "loop",
+        "Workflow Loop の開始Nodeが不正です",
+        `${loop.name} のentry nodeが未設定、または存在しないNodeを参照しています。`,
+        "Entry NodeにLoop内の開始Stepを設定してください。",
+        loop.id,
+      ),
+    );
+  }
+
+  if (loop.evaluatorNodeId && !nodeIds.has(loop.evaluatorNodeId)) {
+    issues.push(
+      issue(
+        `loop-${loop.id}-evaluator-node`,
+        "warning",
+        "loop",
+        "Workflow Loop の評価Nodeが不正です",
+        `${loop.name} のevaluator nodeが存在しないNodeを参照しています。`,
+        "Evaluator Nodeを現在のHarness内のNodeに変更してください。",
+        loop.id,
+      ),
+    );
+  }
+
+  if (loop.exitTargetNodeId && !nodeIds.has(loop.exitTargetNodeId)) {
+    issues.push(
+      issue(
+        `loop-${loop.id}-exit-target`,
+        "warning",
+        "loop",
+        "Workflow Loop の終了先Nodeが不正です",
+        `${loop.name} のexit target nodeが存在しないNodeを参照しています。`,
+        "Exit Target Nodeを現在のHarness内のNodeに変更してください。",
+        loop.id,
+      ),
+    );
+  }
+
+  if (!hasValidMaxIterations(loop)) {
+    issues.push(
+      issue(
+        `loop-${loop.id}-max-iterations`,
+        "warning",
+        "loop",
+        "Workflow Loop の最大反復回数が未設定です",
+        `${loop.name} のmax iterationsが有効な正の整数として設定されていません。`,
+        "Max Iterationsに、Loopを何回まで許容するかを設定してください。",
+        loop.id,
+      ),
+    );
+  }
+
+  if (!hasItems(loop.continueConditions)) {
+    issues.push(
+      issue(
+        `loop-${loop.id}-continue-conditions`,
+        "warning",
+        "loop",
+        "Workflow Loop の継続条件が未入力です",
+        `${loop.name} は、どの条件で次の反復へ進むかが定義されていません。`,
+        "Continue Conditionsに反復を続ける条件を追加してください。",
+        loop.id,
+      ),
+    );
+  }
+
+  if (!hasItems(loop.exitConditions)) {
+    issues.push(
+      issue(
+        `loop-${loop.id}-exit-conditions`,
+        "warning",
+        "loop",
+        "Workflow Loop の終了条件が未入力です",
+        `${loop.name} は、どの条件でLoopを抜けるかが定義されていません。`,
+        "Exit ConditionsにLoopを終了する条件を追加してください。",
+        loop.id,
+      ),
+    );
+  }
+
+  if (!hasItems(loop.loopArtifacts)) {
+    issues.push(
+      issue(
+        `loop-${loop.id}-artifacts`,
+        "info",
+        "loop",
+        "Workflow Loop の反復成果物が未入力です",
+        `${loop.name} は、反復間で何を引き継ぐかが定義されていません。`,
+        "Loop Artifactsに、反復間で渡す成果物や判断を追加してください。",
+        loop.id,
+      ),
+    );
+  }
+
+  if (!includesConnectedSequence(loop, edges)) {
+    issues.push(
+      issue(
+        `loop-${loop.id}-connected-sequence`,
+        "info",
+        "loop",
+        "Workflow Loop 内のNodeがedge flowでつながっていない可能性があります",
+        `${loop.name} に含まれるNodeが、通常のedge flow上で連続した流れに見えません。これは簡易判定です。`,
+        "Loopに含めるNode、または通常edgeの接続を確認してください。",
+        loop.id,
+      ),
+    );
   }
 
   return issues;
@@ -350,7 +420,11 @@ export function validateHarness(harness: Harness): HarnessValidationIssue[] {
   });
 
   harness.edges.forEach((edge) => {
-    issues.push(...validateEdge(edge, harness.nodes, harness.edges));
+    issues.push(...validateEdge(edge, harness.nodes));
+  });
+
+  harness.loops.forEach((loop) => {
+    issues.push(...validateLoop(loop, harness.nodes, harness.edges));
   });
 
   return issues;

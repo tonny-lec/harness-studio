@@ -40,6 +40,12 @@ Handoff Contract = what flows across an edge.
 
 It describes transferred artifacts, handoff conditions, and notes for the connection between two workflow steps.
 
+### Workflow Loop
+
+Workflow Loop = a harness-level control structure that repeats a sequence of workflow steps until exit conditions are met or max iterations are reached.
+
+It can reference workflow steps, an entry step, an optional evaluator step, and an optional exit target step. It is not an Edge and it is not a Node. Edges remain one-way handoff connections.
+
 ### Repository Guidance Lite
 
 Repository Guidance Lite = short durable repository-level guidance.
@@ -50,7 +56,7 @@ It is suitable as a lightweight repository guidance draft and should stay concis
 
 Harness Blueprint = design document for the whole harness.
 
-It summarizes the harness, Context Pack, workflow, nodes, edges, Prompt Briefs, Step Contracts, handoffs, quality gates, and known risks.
+It summarizes the harness, Context Pack, workflow, nodes, edges, Prompt Briefs, Step Contracts, Handoff Contracts, Workflow Loops, quality gates, and known risks.
 
 ## Ownership Model
 
@@ -58,7 +64,8 @@ It summarizes the harness, Context Pack, workflow, nodes, edges, Prompt Briefs, 
 - Prompt Brief belongs to each Node.
 - Step Contract belongs to each Node.
 - Handoff Contract belongs to each Edge.
-- Harness Blueprint is generated from the whole Harness.
+- Workflow Loop belongs to the Harness.
+- Harness Blueprint is generated from Nodes, Edges, Context Pack, Step Contracts, Handoff Contracts, and Workflow Loops.
 
 ## Product Direction
 

@@ -168,7 +168,7 @@ h2 {
 
 .canvas-column {
   display: grid;
-  grid-template-rows: auto auto auto auto auto minmax(420px, 50vh) auto minmax(220px, 28vh);
+  grid-template-rows: auto auto auto auto auto minmax(420px, 50vh) auto auto minmax(220px, 28vh);
   gap: 18px;
   min-width: 0;
 }
@@ -177,6 +177,7 @@ h2 {
 .side-panel,
 .export-panel,
 .validation-panel,
+.workflow-loop-panel,
 .metadata-panel,
 .node-toolbar,
 .prompt-brief-panel,
@@ -541,6 +542,101 @@ h2 {
   justify-self: start;
 }
 
+.workflow-loop-panel {
+  display: grid;
+}
+
+.workflow-loop-empty {
+  padding: 16px;
+  color: #657386;
+  font-weight: 700;
+}
+
+.workflow-loop-body {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.35fr) minmax(0, 1fr);
+  gap: 16px;
+  padding: 16px;
+}
+
+.workflow-loop-list {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+}
+
+.loop-list-item {
+  min-height: 36px;
+  padding: 8px 10px;
+  text-align: left;
+  color: #243246;
+  background: #fbfcfe;
+  border: 1px solid #d6dde8;
+  border-radius: 8px;
+  font-weight: 800;
+}
+
+.loop-list-item.is-selected {
+  color: #2251d1;
+  border-color: #8aa2d8;
+}
+
+.workflow-loop-editor,
+.workflow-loop-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.workflow-loop-grid {
+  grid-template-columns: repeat(2, minmax(220px, 1fr));
+}
+
+.workflow-loop-editor label,
+.workflow-loop-editor fieldset {
+  display: grid;
+  gap: 6px;
+  color: #344255;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.workflow-loop-editor fieldset {
+  margin: 0;
+  padding: 12px;
+  border: 1px solid #d6dde8;
+  border-radius: 8px;
+}
+
+.workflow-loop-checkboxes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(160px, 1fr));
+  gap: 8px;
+}
+
+.workflow-loop-checkboxes label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+}
+
+.workflow-loop-editor input,
+.workflow-loop-editor select,
+.workflow-loop-editor textarea {
+  width: 100%;
+  border: 1px solid #cad3df;
+  border-radius: 6px;
+  padding: 10px;
+  color: #18212f;
+  background: #fbfcfe;
+  font-weight: 500;
+  resize: vertical;
+}
+
+.workflow-loop-editor button {
+  justify-self: start;
+}
+
 .export-panel pre {
   height: calc(100% - 59px);
   margin: 0;
@@ -559,13 +655,16 @@ h2 {
   }
 
   .canvas-column {
-    grid-template-rows: auto auto auto auto auto 520px auto 260px;
+    grid-template-rows: auto auto auto auto auto 520px auto auto 260px;
   }
 
   .metadata-panel,
   .prompt-brief-grid,
   .context-pack-grid,
-  .step-contract-grid {
+  .step-contract-grid,
+  .workflow-loop-body,
+  .workflow-loop-grid,
+  .workflow-loop-checkboxes {
     grid-template-columns: 1fr;
   }
 

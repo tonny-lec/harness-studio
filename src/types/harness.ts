@@ -29,16 +29,28 @@ export type StepContract = {
   failureModes: string[];
 };
 
-export type EdgeKind = "normal" | "conditional" | "loop";
+export type EdgeKind = "normal" | "conditional";
 
 export type HandoffContract = {
   kind: EdgeKind;
   transferredArtifacts: string[];
   conditions: string[];
   notes: string;
+};
+
+export type WorkflowLoop = {
+  id: string;
+  name: string;
+  nodeIds: string[];
+  entryNodeId: string;
+  evaluatorNodeId?: string;
+  exitTargetNodeId?: string;
   maxIterations?: number;
-  stopConditions: string[];
-  failureBehavior?: string;
+  continueConditions: string[];
+  exitConditions: string[];
+  loopArtifacts: string[];
+  escalationBehavior?: string;
+  notes?: string;
 };
 
 export type Harness = {
@@ -48,6 +60,7 @@ export type Harness = {
   contextPack: ContextPack;
   nodes: HarnessNode[];
   edges: HarnessEdge[];
+  loops: WorkflowLoop[];
 };
 
 export type HarnessNode = {
@@ -73,7 +86,7 @@ export type HarnessEdge = {
 
 export type ValidationSeverity = "error" | "warning" | "info";
 
-export type ValidationScope = "harness" | "node" | "edge";
+export type ValidationScope = "harness" | "node" | "edge" | "loop";
 
 export type HarnessValidationIssue = {
   id: string;

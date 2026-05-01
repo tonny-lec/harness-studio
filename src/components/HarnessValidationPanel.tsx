@@ -17,6 +17,7 @@ const scopeLabels: Record<HarnessValidationIssue["scope"], string> = {
   harness: "Harness",
   node: "Node",
   edge: "Edge",
+  loop: "Loop",
 };
 
 export function HarnessValidationPanel({ issues, onSelectNode }: HarnessValidationPanelProps) {

@@ -14,7 +14,6 @@ export const createEmptyHandoffContract = (): HandoffContract => ({
   transferredArtifacts: [],
   conditions: [],
   notes: "",
-  stopConditions: [],
 });
 
 const isStringArray = (value: unknown): value is string[] =>
@@ -63,14 +62,12 @@ export const normalizeHandoffContract = (value: unknown): HandoffContract | unde
   }
 
   const source = value as Partial<Record<keyof HandoffContract, unknown>>;
+  const rawKind = (value as { kind?: unknown }).kind;
   const kind =
-    source.kind === "normal" || source.kind === "conditional" || source.kind === "loop"
-      ? source.kind
+    rawKind === "conditional" ||
+    (rawKind === "loop" && isStringArray(source.conditions) && source.conditions.length > 0)
+      ? "conditional"
       : "normal";
-  const maxIterations =
-    typeof source.maxIterations === "number" && Number.isFinite(source.maxIterations)
-      ? source.maxIterations
-      : undefined;
 
   return {
     kind,
@@ -79,9 +76,6 @@ export const normalizeHandoffContract = (value: unknown): HandoffContract | unde
       : [],
     conditions: isStringArray(source.conditions) ? source.conditions : [],
     notes: typeof source.notes === "string" ? source.notes : "",
-    maxIterations,
-    stopConditions: isStringArray(source.stopConditions) ? source.stopConditions : [],
-    failureBehavior: typeof source.failureBehavior === "string" ? source.failureBehavior : "",
   };
 };
 

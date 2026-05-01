@@ -9,12 +9,11 @@ type SelectedConnectionEditorProps = {
   onChange: (edgeId: string, updates: Partial<HandoffContract>) => void;
 };
 
-type DraftFields = Pick<HandoffContract, "transferredArtifacts" | "conditions" | "stopConditions">;
+type DraftFields = Pick<HandoffContract, "transferredArtifacts" | "conditions">;
 
 const connectionKindLabels: Record<EdgeKind, string> = {
   normal: "Normal",
   conditional: "Conditional",
-  loop: "Loop",
 };
 
 const parseLines = (value: string) =>
@@ -35,7 +34,6 @@ const getHandoff = (edge: HarnessEdge): HandoffContract =>
 const draftFromHandoff = (handoff: HandoffContract): Record<keyof DraftFields, string> => ({
   transferredArtifacts: handoff.transferredArtifacts.join("\n"),
   conditions: handoff.conditions.join("\n"),
-  stopConditions: handoff.stopConditions.join("\n"),
 });
 
 export function SelectedConnectionEditor({
@@ -97,49 +95,6 @@ export function SelectedConnectionEditor({
           placeholder="例:\n- 追加実装が必要な場合\n- Reviewで修正指摘が出た場合"
           onKeyDown={stopKeyboardPropagation}
           onChange={(event) => updateLineField("conditions", event.target.value)}
-        />
-      </label>
-
-      <label>
-        Stop Conditions（停止条件）
-        <textarea
-          value={drafts.stopConditions}
-          rows={4}
-          placeholder="例:\n- npm run build が成功する\n- Review指摘がなくなる\n- 最大反復回数に達する"
-          onKeyDown={stopKeyboardPropagation}
-          onChange={(event) => updateLineField("stopConditions", event.target.value)}
-        />
-      </label>
-
-      <label>
-        Max Iterations（最大反復回数）
-        <input
-          type="number"
-          min={1}
-          value={handoff.maxIterations ?? ""}
-          placeholder={handoff.kind === "loop" ? "例: 3" : "Loopの場合に設定"}
-          onKeyDown={stopKeyboardPropagation}
-          onChange={(event) => {
-            const parsedValue = Number.parseInt(event.target.value, 10);
-
-            onChange(edge.id, {
-              maxIterations:
-                event.target.value === "" || !Number.isFinite(parsedValue)
-                  ? undefined
-                  : parsedValue,
-            });
-          }}
-        />
-      </label>
-
-      <label>
-        Failure Behavior（失敗時の扱い）
-        <textarea
-          value={handoff.failureBehavior ?? ""}
-          rows={4}
-          placeholder="例:\n収束しない場合は未解決リスクとして報告し、人間の判断を求める。"
-          onKeyDown={stopKeyboardPropagation}
-          onChange={(event) => onChange(edge.id, { failureBehavior: event.target.value })}
         />
       </label>
 

@@ -10,6 +10,7 @@ import { NodeEditor } from "./components/NodeEditor";
 import { SelectedConnectionEditor } from "./components/SelectedConnectionEditor";
 import { SelectedNodePromptBrief } from "./components/SelectedNodePromptBrief";
 import { SelectedNodeStepContract } from "./components/SelectedNodeStepContract";
+import { WorkflowLoopEditor } from "./components/WorkflowLoopEditor";
 import { useHarnessStore } from "./store/harnessStore";
 import { validateHarness } from "./utils/validateHarness";
 
@@ -28,6 +29,9 @@ export default function App() {
     updatePromptBrief,
     updateStepContract,
     updateHandoffContract,
+    addWorkflowLoop,
+    updateWorkflowLoop,
+    deleteWorkflowLoop,
     updateContextPack,
     addNode,
     deleteNode,
@@ -94,6 +98,13 @@ export default function App() {
             onSelectEdge={selectEdge}
             onMoveNode={updateNodePosition}
             onEdgesChange={setEdges}
+          />
+          <WorkflowLoopEditor
+            loops={selectedHarness.loops}
+            nodes={selectedHarness.nodes}
+            onAddLoop={addWorkflowLoop}
+            onUpdateLoop={updateWorkflowLoop}
+            onDeleteLoop={deleteWorkflowLoop}
           />
           <HarnessValidationPanel issues={validationIssues} onSelectNode={selectNode} />
           <ExportPreview harness={selectedHarness} selectedNode={selectedNode} />
