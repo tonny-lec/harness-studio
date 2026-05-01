@@ -2,6 +2,8 @@
 
 Harness Studio should feel like a canvas-first harness design workspace, not a vertically stacked form editor and not an oversized empty canvas.
 
+Before implementing another Design workspace layout change, use the implementation-ready wireframe in [DESIGN_WORKSPACE_WIREFRAME.md](DESIGN_WORKSPACE_WIREFRAME.md).
+
 # Primary Layout Principles
 
 - Canvas is the main workspace.
