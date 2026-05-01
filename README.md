@@ -13,6 +13,8 @@ Harness Studio is a local frontend tool for designing AI coding-agent harnesses.
 ## Product Model
 
 The current product model is documented in [docs/PRODUCT_MODEL.md](docs/PRODUCT_MODEL.md).
+UI layout guardrails for future design work are documented in
+[docs/UI_LAYOUT_GUARDRAILS.md](docs/UI_LAYOUT_GUARDRAILS.md).
 
 Key concepts include:
 
