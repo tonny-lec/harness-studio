@@ -57,6 +57,51 @@ type HarnessStore = {
 
 type PersistedHarnessState = Pick<HarnessStore, "harnesses" | "selectedHarnessId">;
 
+const legacySampleNodePositions: Record<string, Record<string, HarnessNode["position"]>> = {
+  "starter-coding-agent": {
+    "task-1": { x: 80, y: 120 },
+    "context-1": { x: 370, y: 60 },
+    "agent-1": { x: 660, y: 130 },
+    "validation-1": { x: 920, y: 170 },
+    "review-1": { x: 1180, y: 80 },
+  },
+  "review-focused-agent": {
+    "task-2": { x: 120, y: 120 },
+    "context-2": { x: 430, y: 70 },
+    "agent-2": { x: 720, y: 140 },
+    "review-2": { x: 1010, y: 90 },
+  },
+};
+
+const sampleNodePositions = new Map(
+  sampleHarnesses.flatMap((harness) =>
+    harness.nodes.map((node) => [`${harness.id}:${node.id}`, node.position] as const),
+  ),
+);
+
+const positionsMatch = (
+  currentPosition: HarnessNode["position"],
+  expectedPosition: HarnessNode["position"] | undefined,
+) =>
+  Boolean(
+    expectedPosition &&
+    currentPosition.x === expectedPosition.x &&
+    currentPosition.y === expectedPosition.y,
+  );
+
+const getNormalizedNodePosition = (
+  harnessId: string,
+  node: HarnessNode,
+): HarnessNode["position"] => {
+  const legacyPosition = legacySampleNodePositions[harnessId]?.[node.id];
+
+  if (!positionsMatch(node.position, legacyPosition)) {
+    return { ...node.position };
+  }
+
+  return { ...(sampleNodePositions.get(`${harnessId}:${node.id}`) ?? node.position) };
+};
+
 const cloneHarnesses = (harnesses: Harness[]) =>
   harnesses.map((harness) => {
     const { promptBrief: legacyPromptBrief, ...baseHarness } = harness as Harness & {
@@ -101,7 +146,7 @@ const cloneHarnesses = (harnesses: Harness[]) =>
           inputs: [...node.inputs],
           outputs: [...node.outputs],
           constraints: [...node.constraints],
-          position: { ...node.position },
+          position: getNormalizedNodePosition(harness.id, node),
         };
       }),
       edges: harness.edges.map(normalizeEdgeHandoff),
