@@ -205,6 +205,7 @@ export default function App() {
               selectedLoop={selectedLoop}
               onSelectNode={handleSelectNode}
               onSelectEdge={handleSelectEdge}
+              onSelectLoop={handleSelectLoop}
               onMoveNode={updateNodePosition}
               onEdgesChange={setEdges}
             />

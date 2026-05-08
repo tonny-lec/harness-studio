@@ -48,9 +48,15 @@ type HarnessCanvasProps = {
   selectedLoop: WorkflowLoop | null;
   onSelectNode: (nodeId: string | null) => void;
   onSelectEdge: (edgeId: string | null) => void;
+  onSelectLoop: (loopId: string | null) => void;
   onMoveNode: (nodeId: string, position: HarnessNode["position"]) => void;
   onEdgesChange: (edges: HarnessEdge[]) => void;
 };
+
+const LOOP_REGION_PREFIX = "loop-region-";
+
+const loopIdFromRegionNode = (nodeId: string) =>
+  nodeId.startsWith(LOOP_REGION_PREFIX) ? nodeId.slice(LOOP_REGION_PREFIX.length) : null;
 
 export function HarnessCanvas({
   harness,
@@ -59,6 +65,7 @@ export function HarnessCanvas({
   selectedLoop,
   onSelectNode,
   onSelectEdge,
+  onSelectLoop,
   onMoveNode,
   onEdgesChange,
 }: HarnessCanvasProps) {
@@ -97,7 +104,6 @@ export function HarnessCanvas({
         ? (harness.nodes.find((node) => node.id === loop.exitTargetNodeId)?.name ?? "")
         : "";
       const entryNodeName = harness.nodes.find((node) => node.id === loop.entryNodeId)?.name ?? "";
-      const exitConditionSummary = loop.exitConditions[0] ?? "";
 
       regions.push({
         id: `loop-region-${loop.id}`,
@@ -107,12 +113,12 @@ export function HarnessCanvas({
           y: minY - LOOP_PADDING,
         },
         data: {
+          loopId: loop.id,
           name: loop.name,
           includedCount: loop.nodeIds.length,
           entryNodeName,
           maxIterations: loop.maxIterations,
           exitTargetName,
-          exitConditionSummary,
           exitConditionCount: loop.exitConditions.length,
           isSelected: selectedLoop?.id === loop.id,
         },
@@ -121,7 +127,8 @@ export function HarnessCanvas({
           height: maxY - minY + LOOP_PADDING * 2,
         },
         draggable: false,
-        selectable: false,
+        selected: selectedLoop?.id === loop.id,
+        selectable: true,
         connectable: false,
         deletable: false,
         zIndex: 0,
@@ -151,6 +158,7 @@ export function HarnessCanvas({
           strokeWidth: edge.id === selectedEdgeId ? 3 : 2,
         },
         selected: edge.id === selectedEdgeId,
+        zIndex: 1,
       })),
     [harness.edges, selectedEdgeId],
   );
@@ -172,6 +180,10 @@ export function HarnessCanvas({
   };
 
   const handleNodeDragStop: OnNodeDrag = (_, node) => {
+    if (loopIdFromRegionNode(node.id)) {
+      return;
+    }
+
     onMoveNode(node.id, node.position);
   };
 
@@ -191,11 +203,23 @@ export function HarnessCanvas({
 
   const handleNodesChange: OnNodesChange = (changes: NodeChange[]) => {
     changes.forEach((change) => {
+      const changeId = "id" in change ? change.id : "";
+      const loopId = loopIdFromRegionNode(changeId);
+
       if (change.type === "position" && change.position) {
+        if (loopId) {
+          return;
+        }
+
         onMoveNode(change.id, change.position);
       }
 
       if (change.type === "select" && change.selected) {
+        if (loopId) {
+          onSelectLoop(loopId);
+          return;
+        }
+
         onSelectNode(change.id);
       }
     });
@@ -216,10 +240,20 @@ export function HarnessCanvas({
         onEdgeClick={(_, edge) => {
           onSelectEdge(edge.id);
         }}
-        onNodeClick={(_, node) => onSelectNode(node.id)}
+        onNodeClick={(_, node) => {
+          const loopId = loopIdFromRegionNode(node.id);
+
+          if (loopId) {
+            onSelectLoop(loopId);
+            return;
+          }
+
+          onSelectNode(node.id);
+        }}
         onPaneClick={() => {
           onSelectNode(null);
           onSelectEdge(null);
+          onSelectLoop(null);
         }}
         onNodeDragStop={handleNodeDragStop}
         deleteKeyCode={["Backspace", "Delete"]}

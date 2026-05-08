@@ -1,12 +1,12 @@
 import type { NodeProps } from "@xyflow/react";
 
 type LoopRegionData = {
+  loopId: string;
   name: string;
   includedCount: number;
   entryNodeName: string;
   maxIterations: number;
   exitTargetName: string;
-  exitConditionSummary: string;
   exitConditionCount: number;
   isSelected: boolean;
 };
@@ -31,7 +31,6 @@ export function LoopRegionNode({ data }: NodeProps) {
             Exit conditions:{" "}
             {loopData.exitConditionCount > 0 ? loopData.exitConditionCount : "未設定"}
           </span>
-          {loopData.exitConditionSummary && <span>{loopData.exitConditionSummary}</span>}
         </div>
       </div>
     </div>
