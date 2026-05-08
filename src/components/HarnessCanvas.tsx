@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
 import {
   addEdge,
   applyEdgeChanges,
@@ -39,9 +39,16 @@ const nodeTypes: NodeTypes = {
 
 const NODE_WIDTH = 220;
 const NODE_HEIGHT = 140;
+const NODE_COLLISION_GAP = 24;
+const COLLISION_SEARCH_STEP = 32;
+const COLLISION_SEARCH_RADIUS = 12;
 const LOOP_SIDE_PADDING = 48;
 const LOOP_TOP_PADDING = 112;
 const LOOP_BOTTOM_PADDING = 48;
+const LOOP_HEADER_WIDTH = 340;
+const LOOP_HEADER_HEIGHT = 72;
+const LOOP_HEADER_OFFSET_X = 12;
+const LOOP_HEADER_OFFSET_Y = 14;
 
 type HarnessCanvasProps = {
   harness: Harness;
@@ -60,6 +67,62 @@ const LOOP_REGION_PREFIX = "loop-region-";
 const loopIdFromRegionNode = (nodeId: string) =>
   nodeId.startsWith(LOOP_REGION_PREFIX) ? nodeId.slice(LOOP_REGION_PREFIX.length) : null;
 
+type Rect = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+};
+
+const toNodeRect = (position: HarnessNode["position"], margin = 0): Rect => ({
+  x: position.x - margin,
+  y: position.y - margin,
+  width: NODE_WIDTH + margin * 2,
+  height: NODE_HEIGHT + margin * 2,
+});
+
+const doRectsOverlap = (first: Rect, second: Rect) =>
+  first.x < second.x + second.width &&
+  first.x + first.width > second.x &&
+  first.y < second.y + second.height &&
+  first.y + first.height > second.y;
+
+const nodePositionWithCandidate = (
+  node: HarnessNode,
+  movingNodeId: string,
+  candidatePosition: HarnessNode["position"],
+) => (node.id === movingNodeId ? candidatePosition : node.position);
+
+const loopHeaderRectsForCandidate = (
+  harness: Harness,
+  movingNodeId: string,
+  candidatePosition: HarnessNode["position"],
+): Rect[] =>
+  harness.loops.flatMap((loop) => {
+    const loopNodes = harness.nodes.filter((node) => loop.nodeIds.includes(node.id));
+
+    if (loopNodes.length === 0) {
+      return [];
+    }
+
+    const positions = loopNodes.map((node) =>
+      nodePositionWithCandidate(node, movingNodeId, candidatePosition),
+    );
+    const minX = Math.min(...positions.map((position) => position.x));
+    const minY = Math.min(...positions.map((position) => position.y));
+    const maxX = Math.max(...positions.map((position) => position.x + NODE_WIDTH));
+    const regionWidth = maxX - minX + LOOP_SIDE_PADDING * 2;
+
+    return [
+      {
+        x: minX - LOOP_SIDE_PADDING + LOOP_HEADER_OFFSET_X,
+        y: minY - LOOP_TOP_PADDING + LOOP_HEADER_OFFSET_Y,
+        width: Math.min(LOOP_HEADER_WIDTH, Math.max(0, regionWidth - LOOP_HEADER_OFFSET_X * 2)),
+        height: LOOP_HEADER_HEIGHT,
+      },
+    ];
+  });
+
 export function HarnessCanvas({
   harness,
   selectedNodeId,
@@ -71,6 +134,72 @@ export function HarnessCanvas({
   onMoveNode,
   onEdgesChange,
 }: HarnessCanvasProps) {
+  const dragStartPositions = useRef<Record<string, HarnessNode["position"]>>({});
+
+  const isSafeNodePosition = (nodeId: string, candidatePosition: HarnessNode["position"]) => {
+    const candidateRect = toNodeRect(candidatePosition);
+    const overlapsNode = harness.nodes.some(
+      (node) =>
+        node.id !== nodeId &&
+        doRectsOverlap(candidateRect, toNodeRect(node.position, NODE_COLLISION_GAP)),
+    );
+
+    if (overlapsNode) {
+      return false;
+    }
+
+    return !loopHeaderRectsForCandidate(harness, nodeId, candidatePosition).some((headerRect) =>
+      doRectsOverlap(candidateRect, headerRect),
+    );
+  };
+
+  const findSafeNodePosition = (
+    nodeId: string,
+    attemptedPosition: HarnessNode["position"],
+  ): HarnessNode["position"] => {
+    if (isSafeNodePosition(nodeId, attemptedPosition)) {
+      return attemptedPosition;
+    }
+
+    const candidates: HarnessNode["position"][] = [];
+
+    for (let radius = 1; radius <= COLLISION_SEARCH_RADIUS; radius += 1) {
+      for (let xStep = -radius; xStep <= radius; xStep += 1) {
+        for (let yStep = -radius; yStep <= radius; yStep += 1) {
+          if (Math.max(Math.abs(xStep), Math.abs(yStep)) !== radius) {
+            continue;
+          }
+
+          candidates.push({
+            x: attemptedPosition.x + xStep * COLLISION_SEARCH_STEP,
+            y: attemptedPosition.y + yStep * COLLISION_SEARCH_STEP,
+          });
+        }
+      }
+    }
+
+    const safeCandidate = candidates
+      .sort((first, second) => {
+        const firstDistance =
+          Math.abs(first.x - attemptedPosition.x) + Math.abs(first.y - attemptedPosition.y);
+        const secondDistance =
+          Math.abs(second.x - attemptedPosition.x) + Math.abs(second.y - attemptedPosition.y);
+
+        return firstDistance - secondDistance;
+      })
+      .find((candidate) => isSafeNodePosition(nodeId, candidate));
+
+    if (safeCandidate) {
+      return safeCandidate;
+    }
+
+    const fallbackPosition = dragStartPositions.current[nodeId];
+
+    return fallbackPosition && isSafeNodePosition(nodeId, fallbackPosition)
+      ? fallbackPosition
+      : attemptedPosition;
+  };
+
   const nodes = useMemo<Node[]>(() => {
     const workflowNodes: Node[] = harness.nodes.map((node) => ({
       id: node.id,
@@ -187,7 +316,8 @@ export function HarnessCanvas({
       return;
     }
 
-    onMoveNode(node.id, node.position);
+    onMoveNode(node.id, findSafeNodePosition(node.id, node.position));
+    delete dragStartPositions.current[node.id];
   };
 
   const handleEdgesChange: OnEdgesChange = (changes: EdgeChange[]) => {
@@ -257,6 +387,17 @@ export function HarnessCanvas({
           onSelectNode(null);
           onSelectEdge(null);
           onSelectLoop(null);
+        }}
+        onNodeDragStart={(_, node) => {
+          if (loopIdFromRegionNode(node.id)) {
+            return;
+          }
+
+          const harnessNode = harness.nodes.find((currentNode) => currentNode.id === node.id);
+
+          if (harnessNode) {
+            dragStartPositions.current[node.id] = harnessNode.position;
+          }
         }}
         onNodeDragStop={handleNodeDragStop}
         deleteKeyCode={["Backspace", "Delete"]}
