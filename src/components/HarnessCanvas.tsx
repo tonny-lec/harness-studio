@@ -344,6 +344,14 @@ export function HarnessCanvas({
           return;
         }
 
+        if (change.dragging) {
+          if (isSafeNodePosition(change.id, change.position)) {
+            onMoveNode(change.id, change.position);
+          }
+
+          return;
+        }
+
         onMoveNode(change.id, findSafeNodePosition(change.id, change.position));
       }
 
