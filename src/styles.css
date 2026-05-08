@@ -531,46 +531,81 @@ h2 {
   height: 100%;
   pointer-events: none;
   background:
-    linear-gradient(135deg, rgba(124, 77, 255, 0.08), rgba(0, 134, 106, 0.05)),
-    rgba(246, 244, 255, 0.72);
-  border: 2px dashed rgba(124, 77, 255, 0.72);
+    linear-gradient(135deg, rgba(124, 77, 255, 0.06), rgba(0, 134, 106, 0.04)),
+    rgba(246, 244, 255, 0.48);
+  border: 2px dashed rgba(124, 77, 255, 0.58);
   border-radius: 16px;
   box-shadow: inset 0 0 0 1px rgba(124, 77, 255, 0.08);
 }
 
 .loop-region-node.is-selected {
   background:
-    linear-gradient(135deg, rgba(124, 77, 255, 0.14), rgba(0, 134, 106, 0.08)),
-    rgba(246, 244, 255, 0.86);
+    linear-gradient(135deg, rgba(124, 77, 255, 0.13), rgba(0, 134, 106, 0.08)),
+    rgba(246, 244, 255, 0.78);
   border-color: #7c4dff;
   box-shadow:
     inset 0 0 0 1px rgba(124, 77, 255, 0.16),
     0 0 0 4px rgba(124, 77, 255, 0.1);
 }
 
-.loop-region-label {
+.loop-region-summary {
   position: absolute;
-  top: -15px;
-  left: 14px;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  max-width: calc(100% - 28px);
-  padding: 5px 9px;
+  top: 10px;
+  left: 12px;
+  display: grid;
+  gap: 5px;
+  max-width: min(420px, calc(100% - 24px));
+  padding: 8px 10px;
   color: #4324a7;
   background: #f9f7ff;
   border: 1px solid #cbbcff;
-  border-radius: 999px;
+  border-radius: 8px;
   box-shadow: 0 6px 14px rgba(67, 36, 167, 0.12);
   font-size: 11px;
   font-weight: 800;
 }
 
-.loop-region-label strong,
-.loop-region-label span {
+.loop-region-node.is-selected .loop-region-summary {
+  background: #ffffff;
+  border-color: #7c4dff;
+}
+
+.loop-region-title-row,
+.loop-region-detail-row,
+.loop-region-exit-row {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.loop-region-title-row {
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.loop-region-detail-row,
+.loop-region-exit-row {
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.loop-region-title-row strong,
+.loop-region-title-row span,
+.loop-region-detail-row span,
+.loop-region-exit-row span {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.loop-region-title-row span,
+.loop-region-detail-row span,
+.loop-region-exit-row span {
+  max-width: 100%;
+  padding: 2px 6px;
+  background: #f1edff;
+  border: 1px solid #cbbcff;
+  border-radius: 999px;
 }
 
 .canvas-workspace-summary {

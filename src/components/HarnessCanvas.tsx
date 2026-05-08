@@ -39,7 +39,7 @@ const nodeTypes: NodeTypes = {
 
 const NODE_WIDTH = 220;
 const NODE_HEIGHT = 140;
-const LOOP_PADDING = 44;
+const LOOP_PADDING = 86;
 
 type HarnessCanvasProps = {
   harness: Harness;
@@ -96,6 +96,8 @@ export function HarnessCanvas({
       const exitTargetName = loop.exitTargetNodeId
         ? (harness.nodes.find((node) => node.id === loop.exitTargetNodeId)?.name ?? "")
         : "";
+      const entryNodeName = harness.nodes.find((node) => node.id === loop.entryNodeId)?.name ?? "";
+      const exitConditionSummary = loop.exitConditions[0] ?? "";
 
       regions.push({
         id: `loop-region-${loop.id}`,
@@ -106,8 +108,12 @@ export function HarnessCanvas({
         },
         data: {
           name: loop.name,
+          includedCount: loop.nodeIds.length,
+          entryNodeName,
           maxIterations: loop.maxIterations,
           exitTargetName,
+          exitConditionSummary,
+          exitConditionCount: loop.exitConditions.length,
           isSelected: selectedLoop?.id === loop.id,
         },
         style: {
