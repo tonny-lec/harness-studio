@@ -1102,6 +1102,28 @@ h2 {
   font-weight: 700;
 }
 
+.side-panel .workflow-loop-checkboxes {
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.side-panel .workflow-loop-checkboxes label {
+  align-items: flex-start;
+  width: 100%;
+  padding: 8px;
+  color: #243246;
+  background: #fbfcfe;
+  border: 1px solid #e4e9f0;
+  border-radius: 6px;
+  line-height: 1.4;
+}
+
+.side-panel .workflow-loop-checkboxes input[type="checkbox"] {
+  flex: 0 0 auto;
+  width: auto;
+  margin-top: 2px;
+}
+
 .workflow-loop-editor input,
 .workflow-loop-editor select,
 .workflow-loop-editor textarea {
