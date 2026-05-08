@@ -14,13 +14,17 @@ import { SelectedNodePromptBrief } from "./components/SelectedNodePromptBrief";
 import { SelectedNodeStepContract } from "./components/SelectedNodeStepContract";
 import { WorkflowLoopInspector } from "./components/WorkflowLoopInspector";
 import { useHarnessStore } from "./store/harnessStore";
+import type { HarnessValidationIssue } from "./types/harness";
 import { validateHarness } from "./utils/validateHarness";
 
 type WorkspaceTab = "design" | "validate" | "export";
+type HarnessInspectorTarget = "details" | "contextPack";
 
 export default function App() {
   const [selectedLoopId, setSelectedLoopId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<WorkspaceTab>("design");
+  const [harnessInspectorTarget, setHarnessInspectorTarget] =
+    useState<HarnessInspectorTarget>("details");
   const {
     harnesses,
     selectedHarnessId,
@@ -70,17 +74,20 @@ export default function App() {
 
   const handleSelectNode = (nodeId: string | null) => {
     setSelectedLoopId(null);
+    setHarnessInspectorTarget("details");
     selectNode(nodeId);
   };
 
   const handleSelectEdge = (edgeId: string | null) => {
     setSelectedLoopId(null);
+    setHarnessInspectorTarget("details");
     selectEdge(edgeId);
   };
 
   const handleSelectLoop = (loopId: string | null) => {
     selectNode(null);
     selectEdge(null);
+    setHarnessInspectorTarget("details");
     setSelectedLoopId(loopId);
   };
 
@@ -88,6 +95,14 @@ export default function App() {
     selectNode(null);
     selectEdge(null);
     setSelectedLoopId(null);
+    setHarnessInspectorTarget("details");
+  };
+
+  const handleSelectContextPack = () => {
+    selectNode(null);
+    selectEdge(null);
+    setSelectedLoopId(null);
+    setHarnessInspectorTarget("contextPack");
   };
 
   const handleAddLoop = () => {
@@ -95,6 +110,32 @@ export default function App() {
     if (loopId) {
       handleSelectLoop(loopId);
     }
+  };
+
+  const handleNavigateValidationIssue = (issue: HarnessValidationIssue) => {
+    setActiveTab("design");
+
+    if (issue.scope === "node" && issue.targetId) {
+      handleSelectNode(issue.targetId);
+      return;
+    }
+
+    if (issue.scope === "edge" && issue.targetId) {
+      handleSelectEdge(issue.targetId);
+      return;
+    }
+
+    if (issue.scope === "workflowLoop" && issue.targetId) {
+      handleSelectLoop(issue.targetId);
+      return;
+    }
+
+    if (issue.scope === "contextPack") {
+      handleSelectContextPack();
+      return;
+    }
+
+    handleSelectHarnessDetails();
   };
 
   return (
@@ -137,6 +178,7 @@ export default function App() {
               selectedEdgeId={selectedEdgeId}
               selectedLoopId={selectedLoopId}
               onSelectHarnessDetails={handleSelectHarnessDetails}
+              onSelectContextPack={handleSelectContextPack}
               onSelectNode={handleSelectNode}
               onSelectEdge={handleSelectEdge}
               onSelectLoop={handleSelectLoop}
@@ -189,16 +231,33 @@ export default function App() {
             </NodeEditor>
           ) : (
             <aside className="side-panel">
-              <h2>Harness Details（ハーネス詳細）</h2>
-              <p className="empty-state">
-                Workflow Step、Connection、Workflow Loopを選択すると、この領域で詳細を編集できます。
-              </p>
-              <HarnessMetadataEditor harness={selectedHarness} onChange={updateHarness} />
-              <ContextPackEditor
-                harnessId={selectedHarness.id}
-                contextPack={selectedHarness.contextPack}
-                onChange={updateContextPack}
-              />
+              {harnessInspectorTarget === "contextPack" ? (
+                <>
+                  <h2>Context Pack（共有前提情報）</h2>
+                  <p className="empty-state">
+                    Harness全体で共有するプロジェクト・ドメイン知識を編集します。
+                  </p>
+                  <ContextPackEditor
+                    harnessId={selectedHarness.id}
+                    contextPack={selectedHarness.contextPack}
+                    onChange={updateContextPack}
+                  />
+                </>
+              ) : (
+                <>
+                  <h2>Harness Details（ハーネス詳細）</h2>
+                  <p className="empty-state">
+                    Workflow Step、Connection、Workflow
+                    Loopを選択すると、この領域で詳細を編集できます。
+                  </p>
+                  <HarnessMetadataEditor harness={selectedHarness} onChange={updateHarness} />
+                  <ContextPackEditor
+                    harnessId={selectedHarness.id}
+                    contextPack={selectedHarness.contextPack}
+                    onChange={updateContextPack}
+                  />
+                </>
+              )}
             </aside>
           )}
         </div>
@@ -208,10 +267,7 @@ export default function App() {
         <section className="workspace-focus-panel">
           <HarnessValidationPanel
             issues={validationIssues}
-            onSelectNode={(nodeId) => {
-              handleSelectNode(nodeId);
-              setActiveTab("design");
-            }}
+            onNavigateIssue={handleNavigateValidationIssue}
           />
         </section>
       )}

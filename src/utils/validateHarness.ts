@@ -249,7 +249,7 @@ const validateLoop = (
       issue(
         `loop-${loop.id}-no-nodes`,
         "warning",
-        "loop",
+        "workflowLoop",
         "Workflow Loop にNodeが含まれていません",
         `${loop.name} は反復対象のWorkflow Stepを持っていません。`,
         "Loopに含めるNodeを1つ以上選択してください。",
@@ -263,7 +263,7 @@ const validateLoop = (
       issue(
         `loop-${loop.id}-entry-node`,
         "warning",
-        "loop",
+        "workflowLoop",
         "Workflow Loop の開始Nodeが不正です",
         `${loop.name} のentry nodeが未設定、または存在しないNodeを参照しています。`,
         "Entry NodeにLoop内の開始Stepを設定してください。",
@@ -277,7 +277,7 @@ const validateLoop = (
       issue(
         `loop-${loop.id}-exit-target`,
         "warning",
-        "loop",
+        "workflowLoop",
         "Workflow Loop の終了先Nodeが不正です",
         `${loop.name} のexit target nodeが存在しないNodeを参照しています。`,
         "Exit Target Nodeを現在のHarness内のNodeに変更してください。",
@@ -291,7 +291,7 @@ const validateLoop = (
       issue(
         `loop-${loop.id}-max-iterations`,
         "warning",
-        "loop",
+        "workflowLoop",
         "Workflow Loop の最大反復回数が未設定です",
         `${loop.name} のmax iterationsが有効な正の整数として設定されていません。`,
         "Max Iterationsに、Loopを何回まで許容するかを設定してください。",
@@ -305,7 +305,7 @@ const validateLoop = (
       issue(
         `loop-${loop.id}-exit-conditions`,
         "warning",
-        "loop",
+        "workflowLoop",
         "Workflow Loop の終了条件が未入力です",
         `${loop.name} は、どの条件でLoopを抜けるかが定義されていません。`,
         "Exit ConditionsにLoopを終了する条件を追加してください。",
@@ -319,7 +319,7 @@ const validateLoop = (
       issue(
         `loop-${loop.id}-artifacts`,
         "info",
-        "loop",
+        "workflowLoop",
         "Workflow Loop の反復成果物が未入力です",
         `${loop.name} は、反復間で何を引き継ぐかが定義されていません。`,
         "Loop Artifactsに、反復間で渡す成果物や判断を追加してください。",
@@ -333,7 +333,7 @@ const validateLoop = (
       issue(
         `loop-${loop.id}-connected-sequence`,
         "info",
-        "loop",
+        "workflowLoop",
         "Workflow Loop 内のNodeがedge flowでつながっていない可能性があります",
         `${loop.name} に含まれるNodeが、通常のedge flow上で連続した流れに見えません。これは簡易判定です。`,
         "Loopに含めるNode、または通常edgeの接続を確認してください。",
@@ -353,7 +353,7 @@ export function validateHarness(harness: Harness): HarnessValidationIssue[] {
       issue(
         "harness-empty-context-pack",
         "warning",
-        "harness",
+        "contextPack",
         "Context Pack が空です",
         "このハーネスには再利用可能なプロジェクト・ドメイン知識がありません。",
         "各NodeのPromptで同じ説明を繰り返さなくてよいように、再利用可能な前提知識を追加してください。",

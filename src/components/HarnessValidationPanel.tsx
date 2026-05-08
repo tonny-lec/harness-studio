@@ -2,7 +2,7 @@ import type { HarnessValidationIssue } from "../types/harness";
 
 type HarnessValidationPanelProps = {
   issues: HarnessValidationIssue[];
-  onSelectNode: (nodeId: string) => void;
+  onNavigateIssue: (issue: HarnessValidationIssue) => void;
 };
 
 const severityLabels: Record<HarnessValidationIssue["severity"], string> = {
@@ -15,12 +15,36 @@ const severityOrder: HarnessValidationIssue["severity"][] = ["error", "warning",
 
 const scopeLabels: Record<HarnessValidationIssue["scope"], string> = {
   harness: "Harness",
+  contextPack: "Context Pack",
   node: "Node",
   edge: "Edge",
-  loop: "Loop",
+  workflowLoop: "Workflow Loop",
 };
 
-export function HarnessValidationPanel({ issues, onSelectNode }: HarnessValidationPanelProps) {
+const isNavigableIssue = (issue: HarnessValidationIssue) =>
+  issue.scope === "harness" || issue.scope === "contextPack" || Boolean(issue.targetId);
+
+const navigationLabel = (issue: HarnessValidationIssue) => {
+  if (issue.scope === "harness") {
+    return "Harness Detailsを開く";
+  }
+
+  if (issue.scope === "contextPack") {
+    return "Context Packを開く";
+  }
+
+  if (issue.scope === "node") {
+    return "このStepを選択";
+  }
+
+  if (issue.scope === "edge") {
+    return "このConnectionを選択";
+  }
+
+  return "このWorkflow Loopを選択";
+};
+
+export function HarnessValidationPanel({ issues, onNavigateIssue }: HarnessValidationPanelProps) {
   const counts = severityOrder.reduce(
     (accumulator, severity) => ({
       ...accumulator,
@@ -59,7 +83,7 @@ export function HarnessValidationPanel({ issues, onSelectNode }: HarnessValidati
               <section className="validation-group" key={severity}>
                 <h3>{severityLabels[severity]}</h3>
                 {severityIssues.map((issue) => {
-                  const canSelectTarget = issue.scope === "node" && issue.targetId;
+                  const canNavigate = isNavigableIssue(issue);
 
                   return (
                     <article
@@ -74,13 +98,13 @@ export function HarnessValidationPanel({ issues, onSelectNode }: HarnessValidati
                       {issue.recommendation && (
                         <p className="validation-recommendation">{issue.recommendation}</p>
                       )}
-                      {canSelectTarget && (
+                      {canNavigate && (
                         <button
                           className="ghost-button compact-button"
                           type="button"
-                          onClick={() => onSelectNode(issue.targetId as string)}
+                          onClick={() => onNavigateIssue(issue)}
                         >
-                          このStepを選択
+                          {navigationLabel(issue)}
                         </button>
                       )}
                     </article>

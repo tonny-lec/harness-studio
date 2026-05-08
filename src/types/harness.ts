@@ -83,7 +83,7 @@ export type HarnessEdge = {
 
 export type ValidationSeverity = "error" | "warning" | "info";
 
-export type ValidationScope = "harness" | "node" | "edge" | "loop";
+export type ValidationScope = "harness" | "contextPack" | "node" | "edge" | "workflowLoop";
 
 export type HarnessValidationIssue = {
   id: string;

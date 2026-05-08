@@ -17,6 +17,7 @@ type HarnessOutlineProps = {
   selectedEdgeId: string | null;
   selectedLoopId: string | null;
   onSelectHarnessDetails: () => void;
+  onSelectContextPack: () => void;
   onSelectNode: (nodeId: string) => void;
   onSelectEdge: (edgeId: string) => void;
   onSelectLoop: (loopId: string) => void;
@@ -29,7 +30,9 @@ const nodeName = (harness: Harness, nodeId: string | undefined) =>
   nodeId ? (harness.nodes.find((node) => node.id === nodeId)?.name ?? "不明なNode") : "未選択";
 
 const loopStatus = (issues: HarnessValidationIssue[], loopId: string) => {
-  const loopIssues = issues.filter((issue) => issue.scope === "loop" && issue.targetId === loopId);
+  const loopIssues = issues.filter(
+    (issue) => issue.scope === "workflowLoop" && issue.targetId === loopId,
+  );
 
   if (loopIssues.some((issue) => issue.severity === "warning" || issue.severity === "error")) {
     return "Needs attention";
@@ -45,6 +48,7 @@ export function HarnessOutline({
   selectedEdgeId,
   selectedLoopId,
   onSelectHarnessDetails,
+  onSelectContextPack,
   onSelectNode,
   onSelectEdge,
   onSelectLoop,
@@ -88,7 +92,7 @@ export function HarnessOutline({
 
       <section className="outline-section">
         <h3>Context Pack</h3>
-        <button className="outline-item" type="button" onClick={onSelectHarnessDetails}>
+        <button className="outline-item" type="button" onClick={onSelectContextPack}>
           <span>
             <Package size={15} aria-hidden="true" />
             Shared context
