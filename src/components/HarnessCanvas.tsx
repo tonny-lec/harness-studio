@@ -345,10 +345,7 @@ export function HarnessCanvas({
         }
 
         if (change.dragging) {
-          if (isSafeNodePosition(change.id, change.position)) {
-            onMoveNode(change.id, change.position);
-          }
-
+          onMoveNode(change.id, change.position);
           return;
         }
 
