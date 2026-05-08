@@ -1,4 +1,4 @@
-import { useMemo, useRef } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   addEdge,
   applyEdgeChanges,
@@ -135,6 +135,11 @@ export function HarnessCanvas({
   onEdgesChange,
 }: HarnessCanvasProps) {
   const dragStartPositions = useRef<Record<string, HarnessNode["position"]>>({});
+  const [draftNodePositions, setDraftNodePositions] = useState<
+    Record<string, HarnessNode["position"]>
+  >({});
+
+  const visualNodePosition = (node: HarnessNode) => draftNodePositions[node.id] ?? node.position;
 
   const isSafeNodePosition = (nodeId: string, candidatePosition: HarnessNode["position"]) => {
     const candidateRect = toNodeRect(candidatePosition);
@@ -204,7 +209,7 @@ export function HarnessCanvas({
     const workflowNodes: Node[] = harness.nodes.map((node) => ({
       id: node.id,
       type: node.type,
-      position: node.position,
+      position: visualNodePosition(node),
       data: {
         ...node,
         loopMembership: {
@@ -227,10 +232,10 @@ export function HarnessCanvas({
         return regions;
       }
 
-      const minX = Math.min(...loopNodes.map((node) => node.position.x));
-      const minY = Math.min(...loopNodes.map((node) => node.position.y));
-      const maxX = Math.max(...loopNodes.map((node) => node.position.x + NODE_WIDTH));
-      const maxY = Math.max(...loopNodes.map((node) => node.position.y + NODE_HEIGHT));
+      const minX = Math.min(...loopNodes.map((node) => visualNodePosition(node).x));
+      const minY = Math.min(...loopNodes.map((node) => visualNodePosition(node).y));
+      const maxX = Math.max(...loopNodes.map((node) => visualNodePosition(node).x + NODE_WIDTH));
+      const maxY = Math.max(...loopNodes.map((node) => visualNodePosition(node).y + NODE_HEIGHT));
       const exitTargetName = loop.exitTargetNodeId
         ? (harness.nodes.find((node) => node.id === loop.exitTargetNodeId)?.name ?? "")
         : "";
@@ -269,7 +274,7 @@ export function HarnessCanvas({
     }, []);
 
     return [...loopRegions, ...workflowNodes];
-  }, [harness.nodes, harness.loops, selectedNodeId, selectedLoop]);
+  }, [harness.nodes, harness.loops, selectedNodeId, selectedLoop, draftNodePositions]);
 
   const edges = useMemo<Edge[]>(
     () =>
@@ -316,7 +321,14 @@ export function HarnessCanvas({
       return;
     }
 
-    onMoveNode(node.id, findSafeNodePosition(node.id, node.position));
+    const safePosition = findSafeNodePosition(node.id, node.position);
+
+    setDraftNodePositions((currentPositions) => {
+      const nextPositions = { ...currentPositions };
+      delete nextPositions[node.id];
+      return nextPositions;
+    });
+    onMoveNode(node.id, safePosition);
     delete dragStartPositions.current[node.id];
   };
 
@@ -345,11 +357,16 @@ export function HarnessCanvas({
         }
 
         if (change.dragging) {
-          onMoveNode(change.id, change.position);
+          const nextPosition = { x: change.position.x, y: change.position.y };
+
+          setDraftNodePositions((currentPositions) => ({
+            ...currentPositions,
+            [change.id]: nextPosition,
+          }));
           return;
         }
 
-        onMoveNode(change.id, findSafeNodePosition(change.id, change.position));
+        return;
       }
 
       if (change.type === "select" && change.selected) {
