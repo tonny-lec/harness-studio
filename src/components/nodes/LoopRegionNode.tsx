@@ -25,8 +25,6 @@ export function LoopRegionNode({ data }: NodeProps) {
           <span>{loopData.includedCount} steps</span>
           {loopData.entryNodeName && <span>Entry: {loopData.entryNodeName}</span>}
           {loopData.exitTargetName && <span>Exit: {loopData.exitTargetName}</span>}
-        </div>
-        <div className="loop-region-exit-row">
           <span>
             Exit conditions:{" "}
             {loopData.exitConditionCount > 0 ? loopData.exitConditionCount : "未設定"}

@@ -550,11 +550,11 @@ h2 {
 
 .loop-region-summary {
   position: absolute;
-  top: 10px;
+  top: 14px;
   left: 12px;
   display: grid;
   gap: 4px;
-  max-width: min(360px, calc(100% - 24px));
+  max-width: min(340px, calc(100% - 24px));
   padding: 7px 9px;
   color: #4324a7;
   background: #f9f7ff;
@@ -572,8 +572,7 @@ h2 {
 }
 
 .loop-region-title-row,
-.loop-region-detail-row,
-.loop-region-exit-row {
+.loop-region-detail-row {
   display: flex;
   align-items: center;
   min-width: 0;
@@ -584,24 +583,21 @@ h2 {
   gap: 10px;
 }
 
-.loop-region-detail-row,
-.loop-region-exit-row {
+.loop-region-detail-row {
   flex-wrap: wrap;
   gap: 5px;
 }
 
 .loop-region-title-row strong,
 .loop-region-title-row span,
-.loop-region-detail-row span,
-.loop-region-exit-row span {
+.loop-region-detail-row span {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .loop-region-title-row span,
-.loop-region-detail-row span,
-.loop-region-exit-row span {
+.loop-region-detail-row span {
   max-width: 100%;
   padding: 2px 6px;
   background: #f1edff;

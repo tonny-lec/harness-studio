@@ -39,7 +39,9 @@ const nodeTypes: NodeTypes = {
 
 const NODE_WIDTH = 220;
 const NODE_HEIGHT = 140;
-const LOOP_PADDING = 86;
+const LOOP_SIDE_PADDING = 48;
+const LOOP_TOP_PADDING = 112;
+const LOOP_BOTTOM_PADDING = 48;
 
 type HarnessCanvasProps = {
   harness: Harness;
@@ -109,8 +111,8 @@ export function HarnessCanvas({
         id: `loop-region-${loop.id}`,
         type: "loopRegion",
         position: {
-          x: minX - LOOP_PADDING,
-          y: minY - LOOP_PADDING,
+          x: minX - LOOP_SIDE_PADDING,
+          y: minY - LOOP_TOP_PADDING,
         },
         data: {
           loopId: loop.id,
@@ -123,8 +125,8 @@ export function HarnessCanvas({
           isSelected: selectedLoop?.id === loop.id,
         },
         style: {
-          width: maxX - minX + LOOP_PADDING * 2,
-          height: maxY - minY + LOOP_PADDING * 2,
+          width: maxX - minX + LOOP_SIDE_PADDING * 2,
+          height: maxY - minY + LOOP_TOP_PADDING + LOOP_BOTTOM_PADDING,
         },
         draggable: false,
         selected: selectedLoop?.id === loop.id,
@@ -158,6 +160,7 @@ export function HarnessCanvas({
           strokeWidth: edge.id === selectedEdgeId ? 3 : 2,
         },
         selected: edge.id === selectedEdgeId,
+        interactionWidth: 18,
         zIndex: 1,
       })),
     [harness.edges, selectedEdgeId],
