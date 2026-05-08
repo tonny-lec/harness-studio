@@ -344,7 +344,7 @@ export function HarnessCanvas({
           return;
         }
 
-        onMoveNode(change.id, change.position);
+        onMoveNode(change.id, findSafeNodePosition(change.id, change.position));
       }
 
       if (change.type === "select" && change.selected) {
