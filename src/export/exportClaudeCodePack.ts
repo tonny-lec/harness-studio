@@ -1,69 +1,41 @@
-import type { Harness, HarnessNode } from "../types/harness";
-import { exportAgentsMd } from "../utils/exportMarkdown";
+import type { Workflow } from "../types/workflow";
+import { stepKindPresets } from "../data/stepKinds";
 import type { ExportBundle, ExportFile } from "./bundleTypes";
+import { fileSlug, planWorkflow, type PlannedStep, type WorkflowPlan } from "./plan";
 import {
-  buildExecutionPlan,
-  buildHarnessExportJson,
-  findNode,
-  fileSlug,
-  type ExecutionPlan,
-} from "./executionPlan";
-import {
-  buildNodePromptTemplate,
-  gateVerdictInstruction,
-  nodeTypeLabels,
+  buildStepPromptTemplate,
+  gateVerdictTextInstruction,
   TASK_PLACEHOLDER,
   UPSTREAM_PLACEHOLDER,
-} from "./nodePrompt";
+} from "./stepPrompt";
+import { buildWorkflowJson } from "./workflowJson";
 
 const ARTIFACT_DIR = ".harness/runs/current";
 
-type StepRef = {
-  node: HarnessNode;
-  stepNumber: number;
-  commandName: string;
-  artifactFile: string;
-};
+const commandName = (planned: PlannedStep) => `harness-step-${planned.slug}`;
+const artifactFile = (planned: PlannedStep) => `${ARTIFACT_DIR}/${planned.slug}.md`;
 
-const buildStepRefs = (harness: Harness, plan: ExecutionPlan): StepRef[] => {
-  const orderedIds = plan.units.flatMap((unit) =>
-    unit.kind === "node" ? [unit.nodeId] : unit.nodeIds,
-  );
-  return orderedIds
-    .map((nodeId, index) => {
-      const node = findNode(harness, nodeId);
-      if (!node) {
-        return null;
-      }
-      const stepNumber = index + 1;
-      const numbered = String(stepNumber).padStart(2, "0");
-      const slug = fileSlug(node.name, node.id);
-      return {
-        node,
-        stepNumber,
-        commandName: `harness-step-${numbered}-${slug}`,
-        artifactFile: `${ARTIFACT_DIR}/${numbered}-${slug}.md`,
-      };
-    })
-    .filter((ref): ref is StepRef => ref !== null);
-};
-
-const upstreamInstruction = (previous: StepRef[]): string => {
+const upstreamInstruction = (previous: PlannedStep[]): string => {
   if (previous.length === 0) {
-    return "This is the first step. There are no upstream artifacts; work from the task and the repository itself.";
+    return "This is the first step. There are no upstream outputs; work from the task and the repository itself.";
   }
   const lines = previous.map(
-    (ref) => `- \`${ref.artifactFile}\` — output of step ${ref.stepNumber} "${ref.node.name}"`,
+    (planned) =>
+      `- \`${artifactFile(planned)}\` — output of step ${planned.number} "${planned.step.name}"`,
   );
-  return `Read the artifacts produced by the previous steps before starting:\n\n${lines.join(
+  return `Read the outputs of the previous steps before starting:\n\n${lines.join(
     "\n",
   )}\n\nIf a file is missing, ask the user for that step's output or run the corresponding step command first.`;
 };
 
-const stepCommandFile = (harness: Harness, refs: StepRef[], ref: StepRef): ExportFile => {
-  const previous = refs.filter((candidate) => candidate.stepNumber < ref.stepNumber);
+const stepCommandFile = (
+  workflow: Workflow,
+  allSteps: PlannedStep[],
+  planned: PlannedStep,
+): ExportFile => {
+  const previous = allSteps.filter((candidate) => candidate.number < planned.number);
   // Function replacements keep "$&"-style sequences in user-authored text literal.
-  let prompt = buildNodePromptTemplate(harness, ref.node)
+  let prompt = buildStepPromptTemplate(workflow, planned.step)
     .replace(
       TASK_PLACEHOLDER,
       () =>
@@ -71,18 +43,18 @@ const stepCommandFile = (harness: Harness, refs: StepRef[], ref: StepRef): Expor
     )
     .replace(UPSTREAM_PLACEHOLDER, () => upstreamInstruction(previous));
 
-  if (ref.node.type === "gate") {
-    prompt += `\n${gateVerdictInstruction()}`;
+  if (planned.step.kind === "gate") {
+    prompt += `\n${gateVerdictTextInstruction()}`;
   }
 
   prompt += `\n## Record Your Output
 
-When you finish this step, write your complete output to \`${ref.artifactFile}\` (create the directory if needed) so later steps can consume it.\n`;
+When you finish this step, write your complete output to \`${artifactFile(planned)}\` (create the directory if needed) so later steps can consume it.\n`;
 
   return {
-    path: `.claude/commands/${ref.commandName}.md`,
+    path: `.claude/commands/${commandName(planned)}.md`,
     content: `---
-description: "Step ${ref.stepNumber}/${refs.length} of harness '${harness.name}': ${ref.node.name} (${nodeTypeLabels[ref.node.type]})"
+description: "Step ${planned.number}/${allSteps.length} of workflow '${workflow.name}': ${planned.step.name}"
 argument-hint: <task description>
 ---
 
@@ -90,105 +62,56 @@ ${prompt}`,
   };
 };
 
-const planOutline = (harness: Harness, plan: ExecutionPlan, refs: StepRef[]): string => {
-  const refByNodeId = new Map(refs.map((ref) => [ref.node.id, ref]));
+const planOutline = (plan: WorkflowPlan): string => {
   const lines: string[] = [];
   plan.units.forEach((unit) => {
-    if (unit.kind === "node") {
-      const ref = refByNodeId.get(unit.nodeId);
-      if (ref) {
-        lines.push(
-          `${ref.stepNumber}. **${ref.node.name}** (${nodeTypeLabels[ref.node.type]}) — \`/${ref.commandName}\``,
-        );
-      }
+    if (unit.kind === "step") {
+      lines.push(
+        `${unit.planned.number}. **${unit.planned.step.name}** — \`/${commandName(unit.planned)}\``,
+      );
       return;
     }
-    const memberLines = unit.nodeIds
-      .map((nodeId) => refByNodeId.get(nodeId))
-      .filter((ref): ref is StepRef => Boolean(ref))
-      .map(
-        (ref) =>
-          `   - ${ref.stepNumber}. **${ref.node.name}** (${nodeTypeLabels[ref.node.type]}) — \`/${ref.commandName}\``,
-      );
-    const exitTarget = unit.exitTargetNodeId
-      ? findNode(harness, unit.exitTargetNodeId)?.name
-      : undefined;
     lines.push(
       [
-        `- 🔁 **Loop: ${unit.name}** (max ${unit.maxIterations} iterations)`,
-        ...memberLines,
-        unit.exitConditions.length > 0
-          ? `   - Exit when: ${unit.exitConditions.join("; ")}`
+        `- 🔁 **Loop: ${unit.block.name}** (max ${unit.block.maxIterations} attempts)`,
+        ...unit.planned.map(
+          (planned) =>
+            `   - ${planned.number}. **${planned.step.name}** — \`/${commandName(planned)}\``,
+        ),
+        unit.block.exitCondition
+          ? `   - Exit when: ${unit.block.exitCondition}`
           : "   - Exit when: the loop's gate step returns PASS",
-        exitTarget ? `   - After exit continue at: ${exitTarget}` : "",
-      ]
-        .filter(Boolean)
-        .join("\n"),
+      ].join("\n"),
     );
   });
   return lines.join("\n");
 };
 
-const mermaidId = (nodeId: string) => nodeId.replace(/[^a-zA-Z0-9_]/g, "_");
-
-const mermaidDiagram = (harness: Harness): string => {
-  const lines = ["```mermaid", "flowchart LR"];
-  const loopMembers = new Set(harness.loops.flatMap((loop) => loop.nodeIds));
-  harness.loops.forEach((loop, index) => {
-    lines.push(`  subgraph loop${index}["🔁 ${loop.name} (max ${loop.maxIterations})"]`);
-    loop.nodeIds.forEach((nodeId) => {
-      const node = findNode(harness, nodeId);
-      if (node) {
-        lines.push(`    ${mermaidId(nodeId)}["${node.name}"]`);
-      }
-    });
-    lines.push("  end");
-  });
-  harness.nodes
-    .filter((node) => !loopMembers.has(node.id))
-    .forEach((node) => {
-      lines.push(`  ${mermaidId(node.id)}["${node.name}"]`);
-    });
-  harness.edges.forEach((edge) => {
-    const conditional = edge.handoff?.kind === "conditional";
-    lines.push(
-      `  ${mermaidId(edge.source)} ${conditional ? "-.->" : "-->"} ${mermaidId(edge.target)}`,
-    );
-  });
-  lines.push("```");
-  return lines.join("\n");
-};
-
-const runCommandFile = (harness: Harness, plan: ExecutionPlan, refs: StepRef[]): ExportFile => {
+const runCommandFile = (workflow: Workflow, plan: WorkflowPlan): ExportFile => {
   const loopRules = plan.units
     .filter((unit) => unit.kind === "loop")
     .map((unit) => {
       if (unit.kind !== "loop") {
         return "";
       }
-      const members = unit.nodeIds
-        .map((nodeId) => findNode(harness, nodeId)?.name ?? nodeId)
-        .join(" → ");
-      const exit =
-        unit.exitConditions.length > 0
-          ? unit.exitConditions.join("; ")
-          : "the gate step inside the loop returns PASS";
-      return `- Loop "${unit.name}": repeat [${members}] until ${exit}. Hard limit: ${unit.maxIterations} iterations. If the limit is reached without satisfying the exit conditions, stop the loop, record the unresolved state in the run log, and continue with the remaining steps while flagging the result as UNRESOLVED.`;
+      const members = unit.planned.map((planned) => planned.step.name).join(" → ");
+      const exit = unit.block.exitCondition || "the gate step inside the loop returns PASS";
+      return `- Loop "${unit.block.name}": repeat [${members}] until ${exit}. Hard limit: ${unit.block.maxIterations} attempts. If the limit is reached without satisfying the exit condition, stop the loop, record the unresolved state, and continue with the remaining steps while flagging the result as UNRESOLVED.`;
     })
     .filter(Boolean);
 
   return {
     path: ".claude/commands/harness-run.md",
     content: `---
-description: "Run the full '${harness.name}' harness workflow end to end"
+description: "Run the full '${workflow.name}' workflow end to end"
 argument-hint: <task description>
 ---
 
-# Run Harness: ${harness.name}
+# Run Workflow: ${workflow.name}
 
-${harness.description || ""}
+${workflow.description || ""}
 
-Execute this harness workflow for the following task:
+Execute this workflow for the following task:
 
 $ARGUMENTS
 
@@ -198,107 +121,82 @@ If no task was passed as an argument, ask the user for the task before doing any
 
 1. Create the artifact directory \`${ARTIFACT_DIR}\` if it does not exist. If it already contains artifacts from a previous run, move them to \`.harness/runs/archive-<n>\` first.
 2. Execute the steps below **in order**. For each step, read its command file in \`.claude/commands/\` and follow it exactly, passing the task above as the argument. Write each step's output to its artifact file before moving on.
-3. Steps marked as Quality Gate end with a \`verdict\` block. On FAIL inside a loop, apply the fix instructions and iterate the loop. On FAIL outside a loop, stop and report.
-${loopRules.length > 0 ? loopRules.map((rule) => `4. ${rule}`).join("\n") : ""}
-${loopRules.length > 0 ? "5" : "4"}. After the last step, write \`${ARTIFACT_DIR}/run-summary.md\`: what was done, validation results, gate verdicts per iteration, unresolved issues, and follow-ups.
+3. Gate steps end with a \`verdict\` block. On FAIL inside a loop, apply the fix instructions and retry the loop. On FAIL outside a loop, stop and report.
+${loopRules.map((rule) => `4. ${rule}`).join("\n")}
+${loopRules.length > 0 ? "5" : "4"}. After the last step, write \`${ARTIFACT_DIR}/run-summary.md\`: what was done, validation results, gate verdicts per attempt, unresolved issues, and follow-ups.
 
 ## Execution Plan
 
-${planOutline(harness, plan, refs)}
-
-## Workflow Diagram
-
-${mermaidDiagram(harness)}
+${planOutline(plan)}
 `,
   };
 };
 
-const workflowDoc = (harness: Harness, plan: ExecutionPlan, refs: StepRef[]): ExportFile => ({
-  path: "harness/workflow.md",
-  content: `# Workflow: ${harness.name}
+const claudeMd = (workflow: Workflow): ExportFile => ({
+  path: "CLAUDE.md",
+  content: `# ${workflow.name}
 
-${harness.description || ""}
+${workflow.description || ""}
 
-## Execution Plan
+${workflow.context ? `## Shared Context\n\n${workflow.context}\n` : ""}
+## Workflow
 
-${planOutline(harness, plan, refs)}
-
-## Diagram
-
-${mermaidDiagram(harness)}
-
-## Machine-Readable Design
-
-The full harness design (context pack, prompt briefs, step contracts, handoff
-contracts, loops, and this execution plan) is stored in
-\`harness/harness.json\`. Re-import it into Harness Studio or feed it to the
-Agent Runner export to execute the same workflow programmatically.
+This repository uses the "${workflow.name}" workflow generated by Harness Studio.
+Run it with \`/harness-run <task>\`, or run steps individually with the
+\`/harness-step-*\` commands. Step outputs live in \`${ARTIFACT_DIR}/\`.
 `,
 });
 
-const packReadme = (harness: Harness, refs: StepRef[]): ExportFile => ({
+const packReadme = (workflow: Workflow, steps: PlannedStep[]): ExportFile => ({
   path: "README.md",
-  content: `# ${harness.name} — Claude Code Harness Pack
+  content: `# ${workflow.name} — Claude Code Pack
 
-Harness Studio で設計したワークフローを、そのまま Claude Code で使えるようにしたパックです。
+Harness Studio で作成したワークフローを、Claude Code のスラッシュコマンドとして
+使えるようにしたパックです。
 
 ## セットアップ
 
-1. このパックの中身を、対象リポジトリのルートにコピーします。
-   - \`CLAUDE.md\` … リポジトリ共通のガイダンス(既存の CLAUDE.md がある場合は内容をマージしてください)
-   - \`.claude/commands/\` … 各ワークフローステップのスラッシュコマンド
-   - \`harness/\` … ワークフロー定義(設計の原本)
+1. このパックの中身を、対象リポジトリのルートにコピーします
+   (既存の \`CLAUDE.md\` がある場合は内容をマージしてください)。
 2. リポジトリで \`claude\` を起動します。
 
 ## 使い方
 
-### ワークフロー全体を実行する
-
 \`\`\`
-/harness-run <タスクの説明>
+/harness-run <タスクの説明>     # ワークフロー全体を実行
 \`\`\`
 
-Claude が実行計画に従って全ステップを順に実行し、ループとゲート判定を処理し、
-成果物を \`.harness/runs/current/\` に書き出します。
+ステップを個別に実行することもできます:
 
-### ステップを 1 つずつ実行する
+${steps
+  .map(
+    (planned) =>
+      `- \`/${commandName(planned)} <タスク>\` — ${planned.step.name}(${stepKindPresets[planned.step.kind].label})`,
+  )
+  .join("\n")}
 
-${refs.map((ref) => `- \`/${ref.commandName} <タスク>\` — ${ref.node.name}`).join("\n")}
-
-各ステップは前のステップの成果物(\`.harness/runs/current/\`)を読み込んでから作業します。
-
-## 含まれるファイル
-
-| パス | 内容 |
-| --- | --- |
-| \`CLAUDE.md\` | Context Pack 由来のリポジトリガイダンス |
-| \`.claude/commands/harness-run.md\` | ワークフロー全体のオーケストレーター |
-| \`.claude/commands/harness-step-*.md\` | 各ステップのプロンプト(Prompt Brief + Step Contract 由来) |
-| \`harness/workflow.md\` | 実行計画とワークフロー図 |
-| \`harness/harness.json\` | ハーネス設計の機械可読データ(再インポート/プログラム実行用) |
+各ステップの成果物は \`${ARTIFACT_DIR}/\` に保存され、後続ステップが読み込みます。
 
 Generated by Harness Studio.
 `,
 });
 
-export function buildClaudeCodePack(harness: Harness): ExportBundle {
-  const plan = buildExecutionPlan(harness);
-  const refs = buildStepRefs(harness, plan);
+export function buildClaudeCodePack(workflow: Workflow): ExportBundle {
+  const plan = planWorkflow(workflow);
 
   const files: ExportFile[] = [
-    packReadme(harness, refs),
-    { path: "CLAUDE.md", content: exportAgentsMd(harness) },
-    runCommandFile(harness, plan, refs),
-    ...refs.map((ref) => stepCommandFile(harness, refs, ref)),
-    workflowDoc(harness, plan, refs),
+    packReadme(workflow, plan.steps),
+    claudeMd(workflow),
+    runCommandFile(workflow, plan),
+    ...plan.steps.map((planned) => stepCommandFile(workflow, plan.steps, planned)),
     {
-      path: "harness/harness.json",
-      content: `${JSON.stringify(buildHarnessExportJson(harness), null, 2)}\n`,
+      path: "workflow.json",
+      content: `${JSON.stringify(buildWorkflowJson(workflow), null, 2)}\n`,
     },
   ];
 
   return {
-    name: `${fileSlug(harness.name, harness.id)}-claude-code-pack`,
+    name: `${fileSlug(workflow.name, "workflow")}-claude-code-pack`,
     description:
       "Claude Code にそのまま導入できるパック(CLAUDE.md + ステップ別スラッシュコマンド + オーケストレーター)",
     files,

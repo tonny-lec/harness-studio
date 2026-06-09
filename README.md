@@ -1,33 +1,28 @@
 # Harness Studio
 
-Harness Studio is a local frontend tool for designing AI coding-agent harnesses. It is meant to help design reusable AI work systems and harness engineering workflows, not just generate one-off prompts.
+Harness Studio is a web app for building **agentic workflows / harnesses without
+the intimidation factor**: assemble a workflow on screen, then download it in a
+form you can actually run.
+
+- **Build**: a vertical pipeline editor. Each step needs only one thing — an
+  instruction. Step kinds (計画 / 調査 / 実行 / レビュー / チェック) come with
+  sensible defaults, and loop blocks repeat steps until a check passes.
+- **Download**:
+  - **Codex Runner (ZIP)** — a standalone Node.js runner built on the
+    [OpenAI Codex SDK](https://developers.openai.com/codex/sdk). Each step runs
+    as a Codex agent thread that can read/edit files and run commands in a
+    target directory. Gates return structured PASS/FAIL verdicts; loops retry
+    with feedback. `npm install && node run.mjs --dir <repo> "<task>"`.
+  - **Claude Code Pack (ZIP)** — CLAUDE.md + per-step slash commands +
+    `/harness-run` orchestrator for running the workflow inside Claude Code.
+  - **workflow.json** — the machine-readable design, re-importable into the
+    studio.
 
 ## Stack
 
-- React
-- TypeScript
-- Vite
-- React Flow
-- Zustand
-
-## Product Model
-
-The current product model is documented in [docs/PRODUCT_MODEL.md](docs/PRODUCT_MODEL.md).
-What "harness design" means and how the runnable exports map design concepts to
-real implementations is documented in
-[docs/HARNESS_DESIGN_GUIDE.md](docs/HARNESS_DESIGN_GUIDE.md) (Japanese).
-UI layout guardrails for future design work are documented in
-[docs/UI_LAYOUT_GUARDRAILS.md](docs/UI_LAYOUT_GUARDRAILS.md).
-
-Key concepts include:
-
-- Harness: the whole AI work system or workflow
-- Context Pack: reusable project and domain knowledge shared by the harness
-- Workflow Step / Node: one promptable workflow step
-- Prompt Brief: what to ask Codex for a step
-- Step Contract: what a step requires, produces, validates, allows, and hands off
-- Handoff Contract: what flows across an edge
-- Harness Blueprint: a design document for the whole harness
+- React + TypeScript + Vite
+- Zustand (localStorage persistence)
+- JSZip (ZIP export)
 
 ## Local Development
 
@@ -45,32 +40,23 @@ npm run format
 npm run format:check
 ```
 
+## Documentation
+
+- [docs/PRODUCT_MODEL.md](docs/PRODUCT_MODEL.md) — the v2 data model
+  (Workflow / Step / Loop) and design rationale
+- [docs/HARNESS_DESIGN_GUIDE.md](docs/HARNESS_DESIGN_GUIDE.md) — what a
+  harness is and how the exports map the design onto real runtimes (Japanese)
+
 ## Current Scope
 
-- Frontend-only Vite app
-- Local Zustand state with localStorage persistence
-- Harness list and harness metadata editing
-- React Flow canvas with draggable, connectable, removable edges
-- Node-level Prompt Brief and Step Contract editing
-- Harness-level Context Pack editing
-- Export preview for Repository Guidance Lite, task-specific prompts, and Harness Blueprint
-- Runnable exports, downloadable as ZIP:
-  - **Claude Code Pack** — `CLAUDE.md` + per-step slash commands +
-    `/harness-run` orchestrator. Drop into a repository and run the whole
-    workflow (loops, gates, artifact handoff) inside Claude Code.
-  - **Agent Runner Pack** — standalone Node.js engine (`run.mjs`, official
-    `@anthropic-ai/sdk`) that executes the workflow against the Anthropic API:
-    topologically ordered steps, structured-output gate verdicts, loop
-    iteration with feedback, artifact files, and a run summary.
-- Both packs embed `harness.json` (design + execution plan) as the
-  machine-readable source of truth.
+- Frontend-only Vite app, localStorage persistence
+- Template gallery + blank workflows + workflow.json import
+- Vertical pipeline editor with step cards and loop blocks
+- Inline validation (empty instructions, loops without exits, gates outside loops)
+- Runnable exports: Codex Runner, Claude Code Pack, workflow.json
 
 ## Not Implemented Yet
 
-- Backend APIs
-- Authentication
-- Database persistence
-- Importing `harness.json` back into the studio
-- Run Log
-- Lessons Learned
-- Routing
+- Backend APIs / authentication / database persistence
+- Running workflows from inside the browser
+- Branching (conditional paths other than loop exits)

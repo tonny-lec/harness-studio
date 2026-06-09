@@ -1,74 +1,57 @@
-# Harness Studio Product Model
+# Product Model (v2)
 
-Harness Studio is a local frontend tool for designing AI coding-agent harnesses. It should help users design AI work systems and harness engineering workflows, not regress into a prompt-only generator.
+Harness Studio v2 was rebuilt from zero around one principle: **the intimidating
+part of agentic workflows is the jargon and the number of decisions, not the
+structure**. The structure of almost every useful workflow is simple — a
+sequence of steps, sometimes repeated until a check passes. The product model
+mirrors exactly that and nothing more.
 
-## Core Concepts
+## Concepts
 
-### Harness
+| Concept            | What it is                                                                                         | Required input        |
+| ------------------ | -------------------------------------------------------------------------------------------------- | --------------------- |
+| **Workflow**       | The whole harness: ordered blocks + shared context                                                 | name                  |
+| **Step**           | One unit of agent work                                                                             | one instruction text  |
+| **Step kind**      | Preset role: 計画 (plan) / 調査 (research) / 実行 (generate) / レビュー (review) / チェック (gate) | — (defaults provided) |
+| **Loop block**     | A group of steps repeated until its exit condition holds, up to a max count                        | — (defaults provided) |
+| **Shared context** | One free-text field injected into every step (project facts, conventions, constraints)             | — (optional)          |
 
-Harness = the whole AI work system or workflow.
+Compared to v1, the following were deliberately **removed**: free-form canvas
+with x/y positions, Prompt Brief (7 fields), Step Contract (6 fields),
+Handoff Contract per edge, Context Pack (7 fields). Their jobs are covered by:
 
-A harness contains reusable context, promptable workflow steps, connections between those steps, and exportable design documents.
+- ordering → the vertical pipeline (blocks are an ordered list)
+- prompt briefs / contracts → step kind presets + one instruction + optional
+  expected output / checklist
+- handoffs → automatic: every step receives the outputs of all previous steps
+- context pack → the single shared-context field
 
-### Context Pack
+## Execution semantics
 
-Context Pack = shared reusable project and domain context for the harness.
+These semantics are implemented identically by both runnable exports:
 
-It captures durable knowledge such as project facts, domain notes, source maps, conventions, reusable constraints, validation commands, and known risks.
+1. Blocks run top to bottom. Each step's output is saved as an artifact and
+   injected into later steps' prompts.
+2. A **gate** step returns a structured verdict (pass, reasons, fix
+   instructions).
+3. A **loop block** runs its steps in order, then checks: the verdict of a gate
+   step inside the loop, or — if there is none — an LLM judge evaluating the
+   loop's exit condition. On FAIL the loop retries with the fix instructions
+   prepended; after max attempts it records UNRESOLVED and the workflow
+   continues.
+4. A gate that fails **outside** a loop stops the run.
 
-### Workflow Step / Node
+## Ownership
 
-Workflow Step / Node = one promptable workflow step.
+- Step → owns kind, name, instruction, expected output, checklist
+- Loop block → owns its steps, max attempts, exit condition
+- Workflow → owns block order, name, description, shared context
 
-A node represents one unit of agent work, such as investigation, implementation, review, or a quality gate.
+## Export formats
 
-### Prompt Brief
-
-Prompt Brief = what to ask Codex for that step.
-
-It contains the step-specific prompt structure: goal, success criteria, available context, constraints, validation, output, and stop rules.
-
-### Step Contract
-
-Step Contract = what the step requires, produces, validates, allows, and hands off.
-
-It describes required inputs, produced artifacts, allowed actions, quality gates, handoff notes, and failure modes for a workflow step.
-
-### Handoff Contract
-
-Handoff Contract = what flows across an edge.
-
-It describes transferred artifacts, handoff conditions, and notes for the connection between two workflow steps.
-
-### Workflow Loop
-
-Workflow Loop = a harness-level control structure that repeats a sequence of workflow steps until exit conditions are met or max iterations are reached.
-
-It can reference workflow steps, an entry step, and an optional exit target step. It is the source of truth for repetition. It is not an Edge and it is not a Node. Edges remain one-way handoff connections.
-
-If exit conditions are met, the loop exits. If exit conditions are not met and max iterations remain, the loop continues. If max iterations are reached before exit conditions are met, the loop stops and the unresolved state should be reported.
-
-### Repository Guidance Lite
-
-Repository Guidance Lite = short durable repository-level guidance.
-
-It is suitable as a lightweight repository guidance draft and should stay concise. Task-specific details belong in node-level Prompt Briefs and task-specific exports.
-
-### Harness Blueprint
-
-Harness Blueprint = design document for the whole harness.
-
-It summarizes the harness, Context Pack, workflow, nodes, edges, Prompt Briefs, Step Contracts, Handoff Contracts, Workflow Loops, quality gates, and known risks.
-
-## Ownership Model
-
-- Context Pack belongs to the Harness.
-- Prompt Brief belongs to each Node.
-- Step Contract belongs to each Node.
-- Handoff Contract belongs to each Edge.
-- Workflow Loop belongs to the Harness.
-- Harness Blueprint is generated from Nodes, Edges, Context Pack, Step Contracts, Handoff Contracts, and Workflow Loops.
-
-## Product Direction
-
-Harness Studio should remain a harness design tool. Prompt generation is one output, but the product model should continue to emphasize reusable AI work systems, explicit workflow contracts, and handoffs between promptable steps.
+- **Codex Runner** — `manifest.json` (plan) + `prompts/*.md` + `run.mjs`
+  (engine on `@openai/codex-sdk`) + `AGENTS.md` + `workflow.json`
+- **Claude Code Pack** — `CLAUDE.md` + `.claude/commands/harness-step-*.md` +
+  `/harness-run` orchestrator + `workflow.json`
+- **workflow.json** — `{ formatVersion: 2, generator, workflow }`,
+  re-importable into the studio
