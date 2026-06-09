@@ -44,8 +44,13 @@ npm run format:check
 
 - [docs/PRODUCT_MODEL.md](docs/PRODUCT_MODEL.md) — the v2 data model
   (Workflow / Step / Loop) and design rationale
+- [docs/AGENTIC_WORKFLOW_BASICS.md](docs/AGENTIC_WORKFLOW_BASICS.md) —
+  fundamentals: agents vs workflows, core patterns, failure modes (Japanese)
 - [docs/HARNESS_DESIGN_GUIDE.md](docs/HARNESS_DESIGN_GUIDE.md) — what a
   harness is and how the exports map the design onto real runtimes (Japanese)
+- [docs/SELF_IMPROVEMENT_LOOP_GUIDE.md](docs/SELF_IMPROVEMENT_LOOP_GUIDE.md) —
+  letting the AI improve its own workflow via the bundled `improve.mjs`
+  (Japanese)
 
 ## Current Scope
 

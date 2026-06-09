@@ -4,6 +4,9 @@
 それが現実にどう実装されるのか、そしてエクスポートがどうやって「実際に使える形」を
 生成しているのかを説明します。
 
+関連: [AGENTIC_WORKFLOW_BASICS.md](AGENTIC_WORKFLOW_BASICS.md)(基礎・パターン集)/
+[SELF_IMPROVEMENT_LOOP_GUIDE.md](SELF_IMPROVEMENT_LOOP_GUIDE.md)(自己改善ループ)
+
 ## 1. ハーネスとは何か
 
 LLM エージェントの「ハーネス(harness)」とは、**モデルの外側にあって、エージェント
