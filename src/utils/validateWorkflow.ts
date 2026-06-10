@@ -43,8 +43,14 @@ export function validateWorkflow(workflow: Workflow): ValidationIssue[] {
         block.id,
       );
     }
-    if (block.maxIterations < 1) {
-      push("error", `ループ「${block.name}」の最大繰り返し回数は 1 以上にしてください。`, block.id);
+    // Number.isInteger also rejects NaN / Infinity (e.g. hand-edited persisted state),
+    // which a plain `< 1` comparison would silently let through.
+    if (!Number.isInteger(block.maxIterations) || block.maxIterations < 1) {
+      push(
+        "error",
+        `ループ「${block.name}」の最大繰り返し回数は 1 以上の整数にしてください。`,
+        block.id,
+      );
     }
   });
 

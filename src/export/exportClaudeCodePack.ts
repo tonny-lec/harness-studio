@@ -1,7 +1,13 @@
 import type { Workflow } from "../types/workflow";
 import { stepKindPresets } from "../data/stepKinds";
 import type { ExportBundle, ExportFile } from "./bundleTypes";
-import { fileSlug, planWorkflow, type PlannedStep, type WorkflowPlan } from "./plan";
+import {
+  fileSlug,
+  planWorkflow,
+  type PlannedStep,
+  type PlannedUnit,
+  type WorkflowPlan,
+} from "./plan";
 import {
   buildStepPromptTemplate,
   gateVerdictTextInstruction,
@@ -88,17 +94,26 @@ const planOutline = (plan: WorkflowPlan): string => {
 };
 
 const runCommandFile = (workflow: Workflow, plan: WorkflowPlan): ExportFile => {
-  const loopRules = plan.units
-    .filter((unit) => unit.kind === "loop")
-    .map((unit) => {
-      if (unit.kind !== "loop") {
-        return "";
-      }
-      const members = unit.planned.map((planned) => planned.step.name).join(" → ");
-      const exit = unit.block.exitCondition || "the gate step inside the loop returns PASS";
-      return `- Loop "${unit.block.name}": repeat [${members}] until ${exit}. Hard limit: ${unit.block.maxIterations} attempts. If the limit is reached without satisfying the exit condition, stop the loop, record the unresolved state, and continue with the remaining steps while flagging the result as UNRESOLVED.`;
-    })
-    .filter(Boolean);
+  const loopUnits = plan.units.filter(
+    (unit): unit is Extract<PlannedUnit, { kind: "loop" }> => unit.kind === "loop",
+  );
+  const loopRules = loopUnits.map(
+    (unit) =>
+      `Loop "${unit.block.name}": repeat [${unit.planned
+        .map((planned) => planned.step.name)
+        .join(" → ")}] until ${
+        unit.block.exitCondition || "the gate step inside the loop returns PASS"
+      }. Hard limit: ${unit.block.maxIterations} attempts. If the limit is reached without satisfying the exit condition, stop the loop, record the unresolved state, and continue with the remaining steps while flagging the result as UNRESOLVED.`,
+  );
+
+  // One flat list numbered in one place, so any number of loop rules stays sequential.
+  const executionRules = [
+    `Create the artifact directory \`${ARTIFACT_DIR}\` if it does not exist. If it already contains artifacts from a previous run, move them to \`.harness/runs/archive-<n>\` first.`,
+    `Execute the steps below **in order**. For each step, read its command file in \`.claude/commands/\` and follow it exactly, passing the task above as the argument. Write each step's output to its artifact file before moving on.`,
+    `Gate steps end with a \`verdict\` block. On FAIL inside a loop, apply the fix instructions and retry the loop. On FAIL outside a loop, stop and report.`,
+    ...loopRules,
+    `After the last step, write \`${ARTIFACT_DIR}/run-summary.md\`: what was done, validation results, gate verdicts per attempt, unresolved issues, and follow-ups.`,
+  ];
 
   return {
     path: ".claude/commands/harness-run.md",
@@ -119,11 +134,7 @@ If no task was passed as an argument, ask the user for the task before doing any
 
 ## Execution Rules
 
-1. Create the artifact directory \`${ARTIFACT_DIR}\` if it does not exist. If it already contains artifacts from a previous run, move them to \`.harness/runs/archive-<n>\` first.
-2. Execute the steps below **in order**. For each step, read its command file in \`.claude/commands/\` and follow it exactly, passing the task above as the argument. Write each step's output to its artifact file before moving on.
-3. Gate steps end with a \`verdict\` block. On FAIL inside a loop, apply the fix instructions and retry the loop. On FAIL outside a loop, stop and report.
-${loopRules.map((rule) => `4. ${rule}`).join("\n")}
-${loopRules.length > 0 ? "5" : "4"}. After the last step, write \`${ARTIFACT_DIR}/run-summary.md\`: what was done, validation results, gate verdicts per attempt, unresolved issues, and follow-ups.
+${executionRules.map((rule, index) => `${index + 1}. ${rule}`).join("\n")}
 
 ## Execution Plan
 
