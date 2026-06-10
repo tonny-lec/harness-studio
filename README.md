@@ -35,10 +35,24 @@ npm run dev
 
 ```bash
 npm run dev
-npm run build
+npm run build         # type-checks (tsc -b) and bundles
+npm test              # vitest, single run
+npm run test:watch    # vitest in watch mode
 npm run format
 npm run format:check
 ```
+
+## Verification
+
+Before committing, make sure all three pass:
+
+```bash
+npm run build && npm test && npm run format:check
+```
+
+Tests cover the pure logic (data model validation, the Zustand store, and the
+three exporters — the product's contract). See [TESTING.md](TESTING.md) for the
+strategy (Japanese).
 
 ## Documentation
 
@@ -51,6 +65,8 @@ npm run format:check
 - [docs/SELF_IMPROVEMENT_LOOP_GUIDE.md](docs/SELF_IMPROVEMENT_LOOP_GUIDE.md) —
   letting the AI improve its own workflow via the bundled `improve.mjs`
   (Japanese)
+- [TESTING.md](TESTING.md) — test strategy: what is covered, why the exporters
+  are treated as the product's contract, and how to run the suite (Japanese)
 
 ## Current Scope
 
