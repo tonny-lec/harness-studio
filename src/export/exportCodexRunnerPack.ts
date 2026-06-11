@@ -25,6 +25,14 @@ type ManifestUnit =
       steps: ManifestStep[];
     };
 
+/**
+ * The generated runner executes `for (i = 1; i <= maxIterations; ...)`, so the
+ * manifest must contain a positive integer — `Math.max(1, NaN)` is NaN and
+ * would silently skip the loop entirely.
+ */
+const clampIterations = (value: number): number =>
+  Number.isFinite(value) ? Math.max(1, Math.floor(value)) : 1;
+
 const manifestStep = (planned: PlannedStep): ManifestStep => ({
   stepId: planned.step.id,
   name: planned.step.name,
@@ -47,7 +55,7 @@ const buildManifest = (workflow: Workflow, plan: WorkflowPlan) => ({
     return {
       kind: "loop",
       name: unit.block.name,
-      maxIterations: Math.max(1, unit.block.maxIterations),
+      maxIterations: clampIterations(unit.block.maxIterations),
       exitCondition: unit.block.exitCondition,
       steps: unit.planned.map(manifestStep),
     };
